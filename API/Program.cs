@@ -42,7 +42,17 @@ builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
-
+// Додаємо політику CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 var app = builder.Build();
 
 // Scalar/OpenAPI dev only
@@ -51,6 +61,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
