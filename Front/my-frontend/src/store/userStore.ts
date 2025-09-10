@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import axiosClient from "../api/axiosClient";
-import { User } from "../types/user";
+import axiosClient from '../api/axiousClient';
+import type { User } from '../types/user';
 
 interface UserState {
   users: User[];
@@ -8,7 +8,6 @@ interface UserState {
   error: string | null;
 
   fetchUsers: () => Promise<void>;
-  fetchUserById: (id: number) => Promise<User | null>;
   fetchUserByEmail: (email: string) => Promise<User | null>;
 }
 
@@ -21,20 +20,14 @@ export const useUserStore = create<UserState>((set) => ({
     try {
       set({ loading: true, error: null });
       const res = await axiosClient.get("/users");
+	  console.log(res);
       set({ users: res.data.payload, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
   },
 
-  fetchUserById: async (id: number) => {
-    try {
-      const res = await axiosClient.get(`/users/${id}`);
-      return res.data.payload;
-    } catch (err: any) {
-      return null;
-    }
-  },
+  
 
   fetchUserByEmail: async (email: string) => {
     try {

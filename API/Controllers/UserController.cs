@@ -36,7 +36,7 @@ public class UsersController : ControllerBase
         if (result == null) return NotFound();
         return Ok(result);
     }
-    [HttpGet("all")]
+    [HttpGet()]
     public async Task<IActionResult> GetUsers()
     {
         var result = await _mediator.Send(new GetUsersQuery());
