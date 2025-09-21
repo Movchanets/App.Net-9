@@ -37,7 +37,7 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ServiceRespon
         }
         else
         {
-            return new ServiceResponse(false, "No users found", null);
+            return new ServiceResponse(false, "No users found");
         }
         return new ServiceResponse(true, "Users retrieved successfully", userVMs);
      
