@@ -5,41 +5,54 @@ using Application.Commands.User.Queries.GetUsers;
 using Application.DTOs;
 using Application.Interfaces;
 using Application.Queries.User;
+using AutoMapper;
 using Infrastructure.Entities;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
-
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly UserManager<UserEntity> userManager;
+    private readonly ITokenService tokenService;
 
-    public UsersController(IMediator mediator)
+    public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService)
     {
         _mediator = mediator;
+        this.userManager = userManager;
+        this.tokenService = tokenService;
     }
 
+    [AllowAnonymous]
+    [HttpGet("test-tokens")]
+    public async Task<IActionResult> GetTokensTEST()
+    {
+        var user = await userManager.FindByIdAsync("1");
+        var accessToken = tokenService.GenerateAccessToken(user);
+        var refreshToken = tokenService.GenerateRefreshToken();
+        return Ok(new
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        });
+    }
+   
+    [AllowAnonymous]
+
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request,
-        [FromServices] UserManager<UserEntity> userManager,
-        [FromServices] ITokenService tokenService)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized(new { Message = "Invalid credentials" });
-
-        var userClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(ClaimTypes.Email, user.Email!)
-        };
-
-        var accessToken = tokenService.GenerateAccessToken(userClaims);
+        
+        var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
 
         // Збережемо refreshToken в БД або Redis
@@ -53,6 +66,8 @@ public class UsersController : ControllerBase
             RefreshToken = refreshToken
         });
     }
+    [AllowAnonymous]
+
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] TokenRequest request,
         [FromServices] UserManager<UserEntity> userManager,
@@ -67,7 +82,7 @@ public class UsersController : ControllerBase
         if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
             return Unauthorized();
 
-        var newAccessToken = tokenService.GenerateAccessToken(principal.Claims);
+        var newAccessToken = tokenService.GenerateAccessToken(user);
         var newRefreshToken = tokenService.GenerateRefreshToken();
 
         user.RefreshToken = newRefreshToken;
@@ -99,7 +114,12 @@ public class UsersController : ControllerBase
         if (result == null) return NotFound();
         return Ok(result);
     }
-    [HttpGet()]
+    [HttpGet("profile")]
+    public IActionResult GetProfile()
+    {
+        return Ok(new { message = "Це видно лише з токеном" });
+    }
+    [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
         var result = await _mediator.Send(new GetUsersQuery());

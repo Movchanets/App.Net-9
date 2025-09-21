@@ -1,4 +1,5 @@
 using System.Text;
+using API;
 using Application;
 using Application.Interfaces;
 using Application.Mapping;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +23,36 @@ builder.Services.AddControllers();
 
 // Scalar + OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi("v1",
+    options =>
+    {
+        // Додаємо Bearer security scheme
+        options.AddDocumentTransformer((document, context, cancellationToken) =>
+        {
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Введіть ваш JWT токен у форматі: Bearer {token}"
+            };
+
+            // робимо глобальною вимогу токена для всіх методів
+            document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                }] = new List<string>()
+            });
+
+            return Task.CompletedTask;
+        });
+    }
+    );
+
 
 // PostgreSQL
 builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -49,15 +80,21 @@ builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
     .AddDefaultTokenProviders();
 // Додаємо політику CORS
 builder.Services.AddCors(options =>
-{
+{   options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5188") 
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
+// JWT Authentication
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddAuthentication(options =>
 {
@@ -80,18 +117,35 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
-// Scalar/OpenAPI dev only
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
-}
-app.UseCors("AllowFrontend");
+    app.MapScalarApiReference(options =>
+    {
+        options.Title = "This is my Scalar API";
+        options.DarkMode = true;
+        options.Favicon = "path";
+        options.DefaultHttpClient = new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.CSharp, ScalarClient.RestSharp);
+        options.HideModels = false;
+        options.Layout = ScalarLayout.Modern;
+        options.ShowSidebar = true;
 
+        options.Authentication = new ScalarAuthenticationOptions
+        {
+            PreferredSecurityScheme = "Bearer"
+        };
+    });
+}
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+
+app.UseCors("AllowFrontend");
 app.MapControllers();
+
+
+
 await app.SeedDataAsync();
 
 app.Run();

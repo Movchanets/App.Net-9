@@ -20,7 +20,7 @@ public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, S
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null)
-            return new ServiceResponse(false, "User not found", null);
+            return new ServiceResponse(false, "User not found");
 
         var roles = await _userManager.GetRolesAsync(user);
 
