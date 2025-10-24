@@ -6,3 +6,4 @@ riderModule.iml
 API/appsettings.json
 API/appsettings.*.json
 *.DotSettings.user
+*.md
