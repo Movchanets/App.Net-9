@@ -21,12 +21,14 @@ public class UsersController : ControllerBase
     private readonly IMediator _mediator;
     private readonly UserManager<UserEntity> userManager;
     private readonly ITokenService tokenService;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService)
+    public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService, ILogger<UsersController> logger)
     {
         _mediator = mediator;
         this.userManager = userManager;
         this.tokenService = tokenService;
+        _logger = logger;
     }
 
     [AllowAnonymous]
@@ -48,9 +50,14 @@ public class UsersController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        _logger.LogInformation("Login attempt for email: {Email}", request.Email);
+        
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            _logger.LogWarning("Failed login attempt for email: {Email}", request.Email);
             return Unauthorized(new { Message = "Invalid credentials" });
+        }
         
         var accessToken = tokenService.GenerateAccessToken(user);
         var refreshToken = tokenService.GenerateRefreshToken();
@@ -60,6 +67,8 @@ public class UsersController : ControllerBase
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
         await userManager.UpdateAsync(user);
 
+        _logger.LogInformation("User {Email} logged in successfully", request.Email);
+        
         return Ok(new
         {
             AccessToken = accessToken,
@@ -99,11 +108,25 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] RegisterUserCommand command)
     {
+        _logger.LogInformation("Creating new user with email: {Email}", command.data.Email);
+        
         if (command.data.Password != command.data.ConfirmPassword)
         {
+            _logger.LogWarning("Password mismatch for user registration: {Email}", command.data.Email);
             return BadRequest("Password and Confirm Password do not match.");
         }
+        
         var result = await _mediator.Send(command);
+        
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation("User created successfully: {Email}", command.data.Email);
+        }
+        else
+        {
+            _logger.LogError("Failed to create user: {Email}. Errors: {Errors}", command.data.Email, result.Payload);
+        }
+        
         return Ok(result);
     }
 
