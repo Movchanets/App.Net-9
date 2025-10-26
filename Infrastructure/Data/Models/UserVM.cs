@@ -1,14 +1,18 @@
 namespace Infrastructure.Data.Models;
 
-public class UserVM
+/// <summary>
+/// ViewModel для користувача з повною інформацією
+/// Mutable через init - дозволяє AutoMapper mapping
+/// </summary>
+public record UserVM
 {
-    public long Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
-    public string UserName { get; set; }
-    public string Image { get; set; }
-    public bool IsBlocked { get; set; }
-    public string PhoneNumber { get; set; }
-    public virtual List<string> UserRoles { get; set; }
+    public long Id { get; init; }
+    public string FirstName { get; init; } = string.Empty;
+    public string LastName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string UserName { get; init; } = string.Empty;
+    public string Image { get; init; } = string.Empty;
+    public bool IsBlocked { get; init; }
+    public string PhoneNumber { get; init; } = string.Empty;
+    public List<string> UserRoles { get; init; } = new();
 }

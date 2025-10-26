@@ -1,9 +1,13 @@
 namespace Application.ViewModels;
 
-public class RegistrationVM
+/// <summary>
+/// ViewModel для реєстрації користувача
+/// Record з init properties для зручного API binding та тестування
+/// </summary>
+public record RegistrationVM
 {
-    public string Username { get; set; }
-    public string Email { get; set; }
-    public string Password { get; set; }
-    public string ConfirmPassword { get; set; }
+    public required string Username { get; init; }
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+    public required string ConfirmPassword { get; init; }
 }

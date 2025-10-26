@@ -32,10 +32,6 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
 
         await _userRepository.UpdateUserAsync(user);
 
-        return new TokenResponse
-        {
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken
-        };
+        return new TokenResponse(newAccessToken, newRefreshToken);
     }
 }

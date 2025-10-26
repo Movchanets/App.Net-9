@@ -1,13 +1,17 @@
 namespace Application.DTOs;
 
-public class LoginRequest
-{
-    public string Email { get; set; }
-    public string Password { get; set; }
-}
+/// <summary>
+/// Request для логіну користувача
+/// </summary>
+public record LoginRequest(
+    string Email,
+    string Password
+);
 
-public class TokenRequest
-{
-    public string AccessToken { get; set; }
-    public string RefreshToken { get; set; }
-}
+/// <summary>
+/// Request для оновлення токенів
+/// </summary>
+public record TokenRequest(
+    string AccessToken,
+    string RefreshToken
+);
