@@ -8,15 +8,26 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Application.Services;
 
+/// <summary>
+/// Сервіс для роботи з JWT токенами
+/// </summary>
 public class TokenService : ITokenService
 {
     private readonly IConfiguration _config;
 
+    /// <summary>
+    /// Ініціалізує новий екземпляр TokenService
+    /// </summary>
     public TokenService(IConfiguration config)
     {
         _config = config;
     }
 
+    /// <summary>
+    /// Генерує JWT access token для користувача
+    /// </summary>
+    /// <param name="user">Користувач для якого генерується токен</param>
+    /// <returns>JWT токен</returns>
     public string GenerateAccessToken(UserEntity user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -39,13 +50,20 @@ public class TokenService : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    /// <summary>
+    /// Генерує refresh token
+    /// </summary>
+    /// <returns>Refresh token</returns>
     public string GenerateRefreshToken()
     {
         return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
     }
 
-   
-
+    /// <summary>
+    /// Валідує JWT access token
+    /// </summary>
+    /// <param name="token">JWT токен для валідації</param>
+    /// <returns>true якщо токен валідний, інакше false</returns>
     public bool ValidateAccessToken(string token)
     { 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -74,6 +92,11 @@ public class TokenService : ITokenService
         }
     }
 
+    /// <summary>
+    /// Отримує ClaimsPrincipal з expired токена (для refresh)
+    /// </summary>
+    /// <param name="token">Expired JWT токен</param>
+    /// <returns>ClaimsPrincipal або null якщо не вдалось</returns>
     public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(

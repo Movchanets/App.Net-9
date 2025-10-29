@@ -6,16 +6,27 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Application.Commands.User.Queries.GetUsers;
 
-
+/// <summary>
+/// Handler для отримання всіх користувачів
+/// </summary>
 public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ServiceResponse>
 {
     private readonly UserManager<UserEntity> _userManager;
 
+    /// <summary>
+    /// Ініціалізує новий екземпляр GetUsersQueryHandler
+    /// </summary>
     public GetUsersQueryHandler(UserManager<UserEntity> userManager)
     {
         _userManager = userManager;
     }
 
+    /// <summary>
+    /// Обробляє запит отримання всіх користувачів
+    /// </summary>
+    /// <param name="request">Запит</param>
+    /// <param name="cancellationToken">Токен скасування</param>
+    /// <returns>Список користувачів з ролями</returns>
     public async Task<ServiceResponse> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
         var users = _userManager?.Users.ToList();

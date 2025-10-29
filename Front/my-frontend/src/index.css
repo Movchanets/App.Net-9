@@ -1,68 +1,55 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@theme {
+  /* Базові токени для темної теми (за замовчуванням) */
+  --color-brand: #0ea5e9;        /* sky-500 */
+  --color-brand-dark: #0284c7;   /* sky-600 */
+  --color-brand-light: #38bdf8;  /* sky-400 */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  --color-surface: #0f172a;      /* slate-900 */
+  --color-surface-card: #111827; /* gray-900 */
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  --color-text: #e2e8f0;         /* slate-200 */
+  --color-text-muted: #94a3b8;   /* slate-400 */
+
+  --font-brand: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  --shadow-card: 0 10px 25px -5px rgba(0,0,0,0.35), 0 8px 10px -6px rgba(0,0,0,0.25);
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
+/* Світла тема через media query (поза @theme) */
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+  * {
+    --color-brand: #0284c7;
+    --color-brand-dark: #075985;
+    --color-brand-light: #0ea5e9;
+    --color-surface: #f8fafc;
+    --color-surface-card: #ffffff;
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --shadow-card: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
   }
-  a:hover {
-    color: #747bff;
+}
+
+
+
+
+@layer base {
+  html, body, #root {
+    @apply h-full bg-surface text-text font-brand antialiased;
   }
-  button {
-    background-color: #f9f9f9;
+
+  a {
+    @apply text-brand hover:text-brand-light transition-colors;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-white shadow hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand/50;
+  }
+
+  .card {
+    @apply rounded-xl bg-surface-card p-6 shadow-card;
   }
 }

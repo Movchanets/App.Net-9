@@ -1,29 +1,19 @@
-import { useEffect } from "react";
-import { useUserStore } from "./store/userStore";
+import { Routes, Route } from 'react-router-dom'
+import { Layout } from './components/Layout'
+import Home from './pages/Home'
+import About from './pages/About'
+import Contacts from './pages/Contacts'
+import Auth from './pages/Auth'
 
-function App() {
-  const { users, fetchUsers, loading, error } = useUserStore();
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
+export default function App() {
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold">Users Dashboard</h1>
-
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-
-      <ul>
-        {users.map((u) => (
-          <li key={u.id}>
-            {u.userName} ({u.email}) → {u.userRoles.join(", ")}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Home />} />
+        <Route path="about" element={<About />} />
+        <Route path="contacts" element={<Contacts />} />
+        <Route path="auth" element={<Auth />} />
+      </Route>
+    </Routes>
+  )
 }
-
-export default App;

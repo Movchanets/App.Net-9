@@ -6,18 +6,29 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Application.Commands.User.CreateUser;
 
+/// <summary>
+/// Handler для реєстрації нового користувача
+/// </summary>
 public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceResponse>
 {
     private readonly UserManager<UserEntity> _userManager;
     private readonly RoleManager<RoleEntity> _roleManager;
 
-
+    /// <summary>
+    /// Ініціалізує новий екземпляр RegisterUserHandler
+    /// </summary>
     public RegisterUserHandler( UserManager<UserEntity> userManager, RoleManager<RoleEntity> roleManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
     }
 
+    /// <summary>
+    /// Обробляє команду реєстрації користувача
+    /// </summary>
+    /// <param name="request">Команда з даними користувача</param>
+    /// <param name="cancellationToken">Токен скасування</param>
+    /// <returns>Результат операції</returns>
     public async Task<ServiceResponse> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
        

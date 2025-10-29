@@ -31,6 +31,9 @@ public class UsersController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>
+    /// Тестовий endpoint для отримання токенів
+    /// </summary>
     [AllowAnonymous]
     [HttpGet("test-tokens")]
     public async Task<IActionResult> GetTokensTEST()
@@ -45,8 +48,10 @@ public class UsersController : ControllerBase
         });
     }
    
+    /// <summary>
+    /// Аутентифікація користувача через email та password
+    /// </summary>
     [AllowAnonymous]
-
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -75,8 +80,10 @@ public class UsersController : ControllerBase
             RefreshToken = refreshToken
         });
     }
+    /// <summary>
+    /// Оновлення access token через refresh token
+    /// </summary>
     [AllowAnonymous]
-
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] TokenRequest request,
         [FromServices] UserManager<UserEntity> userManager,
@@ -105,6 +112,9 @@ public class UsersController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Реєстрація нового користувача
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] RegisterUserCommand command)
     {
@@ -130,6 +140,9 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Отримання користувача за ID
+    /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUser(int id)
     {
@@ -137,11 +150,19 @@ public class UsersController : ControllerBase
         if (result == null) return NotFound();
         return Ok(result);
     }
+
+    /// <summary>
+    /// Отримання профілю поточного користувача
+    /// </summary>
     [HttpGet("profile")]
     public IActionResult GetProfile()
     {
         return Ok(new { message = "Це видно лише з токеном" });
     }
+
+    /// <summary>
+    /// Отримання всіх користувачів
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {
@@ -149,6 +170,10 @@ public class UsersController : ControllerBase
         if (result.Payload == null) return NotFound();
         return Ok(result);
     }
+
+    /// <summary>
+    /// Отримання користувача за email
+    /// </summary>
     [HttpGet("by-email/{email}")]
     public async Task<IActionResult> GetUserByEmail(string email)
     {

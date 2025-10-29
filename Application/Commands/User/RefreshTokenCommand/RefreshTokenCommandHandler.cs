@@ -6,17 +6,29 @@ namespace Application.Commands.User.RefreshTokenCommand;
 
 using MediatR;
 
+/// <summary>
+/// Handler для оновлення токенів
+/// </summary>
 public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, TokenResponse>
 {
     private readonly ITokenService _tokenService;
     private readonly IUserRepository _userRepository;
 
+    /// <summary>
+    /// Ініціалізує новий екземпляр RefreshTokenCommandHandler
+    /// </summary>
     public RefreshTokenCommandHandler(ITokenService tokenService, IUserRepository userRepository)
     {
         _tokenService = tokenService;
         _userRepository = userRepository;
     }
 
+    /// <summary>
+    /// Обробляє команду оновлення токенів
+    /// </summary>
+    /// <param name="request">Команда з refresh token</param>
+    /// <param name="cancellationToken">Токен скасування</param>
+    /// <returns>Нові access та refresh токени</returns>
     public async Task<TokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetUserByRefreshTokenAsync(request.RefreshToken);
