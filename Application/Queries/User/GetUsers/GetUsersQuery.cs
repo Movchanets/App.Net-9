@@ -1,7 +1,7 @@
 using Application.ViewModels;
 using MediatR;
 
-namespace Application.Commands.User.Queries.GetUsers;
+namespace Application.Queries.User.GetUsers;
 
 
 public record GetUsersQuery : IRequest<ServiceResponse>;

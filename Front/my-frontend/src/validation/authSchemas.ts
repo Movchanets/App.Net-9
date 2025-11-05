@@ -27,6 +27,7 @@ export type LoginFormValues = yup.InferType<typeof loginFormSchema>
 
 export const registerFormSchema = yup.object({
   name: nameSchema,
+  surname: nameSchema,
   password: passwordSchema,
   confirmPassword: yup
     .string()

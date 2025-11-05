@@ -38,7 +38,7 @@ export default function Auth() {
 
     try {
       const result = await authApi.login({ email, password })
-      setAuth(result.token, result.user)
+      setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
       setError('Невірний пароль')
@@ -47,13 +47,13 @@ export default function Auth() {
     }
   }
 
-  const handleRegister = async (name: string, password: string) => {
+  const handleRegister = async (name: string, surname: string, password: string, confirmPassword: string) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const result = await authApi.register({ email, name, password })
-      setAuth(result.token, result.user)
+      const result = await authApi.register({ email, name, surname, password, confirmPassword })
+      setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
       setError('Помилка реєстрації')

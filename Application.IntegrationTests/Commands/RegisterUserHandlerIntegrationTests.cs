@@ -26,7 +26,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Arrange
         var registrationData = new RegistrationVM
         {
-            Username = "testuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "test@example.com",
             Password = "Password123!",
             ConfirmPassword = "Password123!"
@@ -47,7 +48,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // ✨ Перевіряємо БД
         var userInDb = await DbContext.Users.FirstOrDefaultAsync(u => u.Email == "test@example.com");
         userInDb.Should().NotBeNull();
-        userInDb!.UserName.Should().Be("testuser");
+        userInDb!.UserName.Should().MatchRegex(ValidationRegexPattern.UsernameValidationPattern);
         userInDb.Email.Should().Be("test@example.com");
         userInDb.NormalizedEmail.Should().Be("TEST@EXAMPLE.COM");
         
@@ -62,7 +63,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Arrange
         var registrationData = new RegistrationVM
         {
-            Username = "john",
+            Name = "John",
+            Surname = "Doe",
             Email = "john@example.com",
             Password = "SecurePass123!",
             ConfirmPassword = "SecurePass123!"
@@ -98,7 +100,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
 
         var registrationData = new RegistrationVM
         {
-            Username = "firstuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "first@example.com",
             Password = "Password123!",
             ConfirmPassword = "Password123!"
@@ -123,7 +126,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Arrange - слабкий пароль (не відповідає вимогам Identity)
         var registrationData = new RegistrationVM
         {
-            Username = "weakuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "weak@example.com",
             Password = "123", // Слабкий пароль
             ConfirmPassword = "123"
@@ -153,7 +157,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Arrange - спочатку створюємо користувача
         var firstRegistration = new RegistrationVM
         {
-            Username = "first",
+            Name = "John",
+            Surname = "Doe",
             Email = "duplicate@example.com",
             Password = "Password123!",
             ConfirmPassword = "Password123!"
@@ -163,7 +168,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Намагаємось створити другого з таким же email
         var secondRegistration = new RegistrationVM
         {
-            Username = "second",
+            Name = "John",
+            Surname = "Doe",
             Email = "duplicate@example.com", // Дублікат!
             Password = "Password456!",
             ConfirmPassword = "Password456!"
@@ -189,7 +195,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         var password = "MySecretPassword123!";
         var registrationData = new RegistrationVM
         {
-            Username = "secureuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "secure@example.com",
             Password = password,
             ConfirmPassword = password

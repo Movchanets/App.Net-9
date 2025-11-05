@@ -5,6 +5,8 @@ using Application.Interfaces;
 using Application.Mapping;
 using Application.Services;
 using Infrastructure;
+using Infrastructure.Services;
+using API.Services;
 using Infrastructure.Entities;
 using Infrastructure.Initializer;
 using Infrastructure.Repositories;
@@ -85,7 +87,8 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
 });
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "<License Key Here>", typeof(Program));
+
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -95,7 +98,7 @@ builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
         options.Password.RequiredLength = 6;
         options.User.RequireUniqueEmail = true;
         options.User.AllowedUserNameCharacters =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+"; 
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
     })
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
@@ -115,8 +118,18 @@ builder.Services.AddCors(options =>
               .AllowCredentials();
     });
 });
+// Memory cache for rate-limiting
+builder.Services.AddMemoryCache();
 // JWT Authentication
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
+// Email sender (SMTP) - reads SmtpSettings from configuration
+// Registered as singleton so hosted background service can consume it safely.
+builder.Services.AddSingleton<Application.Interfaces.IEmailService, SmtpEmailService>();
+// Background email queue and hosted service
+    builder.Services.AddSingleton<BackgroundEmailQueue>();
+    builder.Services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<BackgroundEmailQueue>());
+    builder.Services.AddHostedService<EmailSenderBackgroundService>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

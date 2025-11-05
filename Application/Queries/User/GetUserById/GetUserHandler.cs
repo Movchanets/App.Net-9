@@ -3,7 +3,7 @@ using AutoMapper;
 using Infrastructure.Repositories.Interfaces;
 using MediatR;
 
-namespace Application.Queries.User;
+namespace Application.Queries.User.GetUserById;
 
 /// <summary>
 /// Handler для отримання користувача за ID

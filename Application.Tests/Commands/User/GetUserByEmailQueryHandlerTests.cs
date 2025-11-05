@@ -1,4 +1,4 @@
-using Application.Commands.User.Queries.GetUserByEmail;
+using Application.Queries.User.GetUserByEmail;
 using FluentAssertions;
 using Infrastructure.Data.Models;
 using Infrastructure.Entities;

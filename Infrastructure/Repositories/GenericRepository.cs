@@ -13,7 +13,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     /// <summary>
     /// Ініціалізує новий екземпляр GenericRepository
     /// </summary>
-    public GenericRepository(AppDbContext db)
+    protected GenericRepository(AppDbContext db)
     {
         _db = db;
     }
@@ -56,7 +56,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     /// <summary>
     /// Отримує сутність за ID
     /// </summary>
-    public async Task<T?> GetByIdAsync(int id)
+    public async Task<T?> GetByIdAsync(long id)
     {
         return await _db.Set<T>().FindAsync(id);
     }

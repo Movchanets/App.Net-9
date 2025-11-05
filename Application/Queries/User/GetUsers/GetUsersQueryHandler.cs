@@ -4,7 +4,7 @@ using Infrastructure.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Application.Commands.User.Queries.GetUsers;
+namespace Application.Queries.User.GetUsers;
 
 /// <summary>
 /// Handler для отримання всіх користувачів

@@ -5,7 +5,7 @@ import { registerFormSchema, type RegisterFormValues } from '../../validation/au
 interface RegisterStepProps {
   email: string
   onBack: () => void
-  onSubmit: (name: string, password: string) => void
+  onSubmit: (name: string, surname: string, password: string, confirmPassword: string) => void
   isLoading: boolean
 }
 
@@ -21,7 +21,7 @@ export function RegisterStep({ email, onBack, onSubmit, isLoading }: RegisterSte
   })
 
   const handleFormSubmit = (data: FormData) => {
-    onSubmit(data.name, data.password)
+    onSubmit(data.name, data.surname, data.password, data.confirmPassword)
   }
 
   return (
@@ -52,9 +52,25 @@ export function RegisterStep({ email, onBack, onSubmit, isLoading }: RegisterSte
             id="name"
             type="text"
             placeholder="Ваше ім'я"
+            autoComplete="given-name"
             className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
           />
           {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label htmlFor="surname" className="mb-1 block text-sm text-text-muted">
+            Прізвище
+          </label>
+          <input
+            {...register('surname')}
+            id="surname"
+            type="text"
+            placeholder="Ваше прізвище"
+            autoComplete="family-name"
+            className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
+          />
+          {errors.surname && <p className="mt-1 text-sm text-red-500">{errors.surname.message}</p>}
         </div>
 
         <div>
@@ -66,6 +82,7 @@ export function RegisterStep({ email, onBack, onSubmit, isLoading }: RegisterSte
             id="password"
             type="password"
             placeholder="••••••••"
+            autoComplete="new-password"
             className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
           />
           {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}
@@ -80,6 +97,7 @@ export function RegisterStep({ email, onBack, onSubmit, isLoading }: RegisterSte
             id="confirmPassword"
             type="password"
             placeholder="••••••••"
+            autoComplete="new-password"
             className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
           />
           {errors.confirmPassword && (

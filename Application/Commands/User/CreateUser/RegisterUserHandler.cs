@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Application.ViewModels;
 using Infrastructure.Data.Constants;
 using Infrastructure.Entities;
@@ -22,7 +23,33 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
         _userManager = userManager;
         _roleManager = roleManager;
     }
+    /// <summary>
+    /// Генерує унікальне ім'я користувача на основі імені та прізвища.
+    /// </summary>
+    /// <param name="firstName">Ім'я</param>
+    /// <param name="lastName">Прізвище</param>
+    /// <returns>Унікальне ім'я користувача</returns>
+    private async Task<string> GenerateUniqueUsername(string firstName, string lastName)
+    {
+        string baseUsername = $"{firstName}.{lastName}".ToLower();
+        // Remove non-alphanumeric characters for clean usernames
+        baseUsername = Regex.Replace(baseUsername, ValidationRegexPattern.UsernameSanitizePattern, "");
+        if (string.IsNullOrWhiteSpace(baseUsername))
+        {
+            baseUsername = "user";
+        }
+        string username = baseUsername;
+        int counter = 1;
 
+        // Loop until a unique username is found
+        while (await _userManager.FindByNameAsync(username) != null)
+        {
+            counter++;
+            username = baseUsername + counter;
+        }
+
+        return username;
+    }
     /// <summary>
     /// Обробляє команду реєстрації користувача
     /// </summary>
@@ -34,9 +61,12 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
        
       var user = new UserEntity
         {
-            UserName = request.data.Username,
             Email = request.data.Email,
+            Name = request.data.Name,
+            Surname = request.data.Surname,
+            
         };
+        user.UserName = await GenerateUniqueUsername(user.Name, user.Surname);
         var result = await _userManager.CreateAsync(user, request.data.Password);
         if (!result.Succeeded)
             return new ServiceResponse(false, "User creation failed", result.Errors.Select(e => e.Description).ToList());

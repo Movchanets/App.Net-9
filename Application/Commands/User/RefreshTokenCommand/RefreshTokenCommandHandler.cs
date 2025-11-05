@@ -36,14 +36,10 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         if (user == null || user.RefreshTokenExpiryTime < DateTime.UtcNow)
             throw new UnauthorizedAccessException("Invalid or expired refresh token");
 
-        var newAccessToken = _tokenService.GenerateAccessToken(user);
-        var newRefreshToken = _tokenService.GenerateRefreshToken();
+        var newAccessToken = await _tokenService.GenerateAccessTokenAsync(user);
+        var newRefreshToken =await _tokenService.GenerateRefreshTokenAsync(user);
 
-        user.RefreshToken = newRefreshToken;
-        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
-
-        await _userRepository.UpdateUserAsync(user);
-
+       
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 }

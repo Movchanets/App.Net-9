@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import axiosClient from '../api/axiousClient';
+import { authApi } from '../api/authApi';
 import type { User } from '../types/user';
 
-interface UserState {
+interface AdminPageStore {
   users: User[];
   loading: boolean;
   error: string | null;
@@ -11,7 +11,7 @@ interface UserState {
   fetchUserByEmail: (email: string) => Promise<User | null>;
 }
 
-export const useUserStore = create<UserState>((set) => ({
+export const useAdminPageStore = create<AdminPageStore>((set) => ({
   users: [],
   loading: false,
   error: null,
@@ -19,9 +19,8 @@ export const useUserStore = create<UserState>((set) => ({
   fetchUsers: async () => {
     try {
       set({ loading: true, error: null });
-      const res = await axiosClient.get("/users");
-	  console.log(res);
-      set({ users: res.data.payload, loading: false });
+      const res = await authApi.getUsers();
+      set({ users: res.payload ?? res.data?.payload ?? [], loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
@@ -31,8 +30,8 @@ export const useUserStore = create<UserState>((set) => ({
 
   fetchUserByEmail: async (email: string) => {
     try {
-      const res = await axiosClient.get(`/users/email/${email}`);
-      return res.data.payload;
+      const res = await authApi.getUserByEmail(email);
+      return res.payload ?? res.data?.payload ?? null;
     } catch (err: any) {
       return null;
     }

@@ -79,6 +79,7 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
             id="email"
             type="email"
             placeholder="your@email.com"
+            autoComplete="email"
             className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
           />
           {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}

@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import About from './pages/About'
 import Contacts from './pages/Contacts'
 import Auth from './pages/Auth'
+import ResetPassword from './pages/ResetPassword'
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="contacts" element={<Contacts />} />
         <Route path="auth" element={<Auth />} />
+        <Route path="reset-password" element={<ResetPassword />} />
       </Route>
     </Routes>
   )

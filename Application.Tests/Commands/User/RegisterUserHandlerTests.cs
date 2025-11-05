@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Application.Commands.User.CreateUser;
 using Application.ViewModels;
 using FluentAssertions;
@@ -48,7 +49,8 @@ public class RegisterUserHandlerTests
         // Arrange - підготовка даних реєстрації
         var registrationData = new RegistrationVM
         {
-            Username = "testuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "test@example.com",
             Password = "Password123!",
             ConfirmPassword = "Password123!"
@@ -80,7 +82,7 @@ public class RegisterUserHandlerTests
         
         // Перевіряємо, що користувач був створений з правильними даними
         _userManagerMock.Verify(x => x.CreateAsync(
-            It.Is<UserEntity>(u => u.UserName == "testuser" && u.Email == "test@example.com"),
+            It.Is<UserEntity>(u =>Regex.IsMatch(u.UserName, ValidationRegexPattern.UsernameValidationPattern) && u.Email == "test@example.com"),
             "Password123!"), Times.Once);
         
         // Перевіряємо, що роль була призначена
@@ -97,7 +99,8 @@ public class RegisterUserHandlerTests
         // Arrange - дані з недопустимим паролем
         var registrationData = new RegistrationVM
         {
-            Username = "testuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "test@example.com",
             Password = "weak", // Слабкий пароль
             ConfirmPassword = "weak"
@@ -139,7 +142,8 @@ public class RegisterUserHandlerTests
         // Arrange
         var registrationData = new RegistrationVM
         {
-            Username = "testuser",
+            Name = "John",
+            Surname = "Doe",
             Email = "test@example.com",
             Password = "Password123!",
             ConfirmPassword = "Password123!"
@@ -188,7 +192,8 @@ public class RegisterUserHandlerTests
         // Arrange
         var registrationData = new RegistrationVM
         {
-            Username = "john_doe",
+            Name = "John",
+            Surname = "Doe",
             Email = "john@example.com",
             Password = "SecurePass123!",
             ConfirmPassword = "SecurePass123!"
@@ -217,7 +222,9 @@ public class RegisterUserHandlerTests
 
         // Assert - перевіряємо правильність мапінгу
         capturedUser.Should().NotBeNull();
-        capturedUser.UserName.Should().Be("john_doe");
+        capturedUser.Name.Should().Be("John");
+        capturedUser.Surname.Should().Be("Doe");
+        capturedUser.UserName.Should().MatchRegex(ValidationRegexPattern.UsernameValidationPattern);
         capturedUser.Email.Should().Be("john@example.com");
     }
 }

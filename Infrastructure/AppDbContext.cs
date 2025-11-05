@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
-public class AppDbContext : IdentityDbContext<
+public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<
     UserEntity,
     RoleEntity,
     long,
@@ -13,13 +13,9 @@ public class AppDbContext : IdentityDbContext<
     UserRoleEntity,
     IdentityUserLogin<long>,
     IdentityRoleClaim<long>,
-    IdentityUserToken<long>>
+    IdentityUserToken<long>>(options)
 
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-    {
-    }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -28,7 +24,7 @@ public class AppDbContext : IdentityDbContext<
         builder.Entity<UserRoleEntity>(userRole =>
         {
             userRole.HasKey(ur => new { ur.UserId, ur.RoleId });
-
+        
             userRole.HasOne(ur => ur.User)
                 .WithMany(u => u.UserRoles)
                 .HasForeignKey(ur => ur.UserId)

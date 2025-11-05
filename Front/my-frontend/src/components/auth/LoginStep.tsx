@@ -52,6 +52,7 @@ export function LoginStep({ email, onBack, onSubmit, isLoading }: LoginStepProps
             id="password"
             type="password"
             placeholder="••••••••"
+            autoComplete="current-password"
             className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text outline-none transition-colors focus:border-brand"
           />
           {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>}

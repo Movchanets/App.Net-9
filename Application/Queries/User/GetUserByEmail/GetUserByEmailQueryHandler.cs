@@ -4,12 +4,12 @@ using Infrastructure.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 
-namespace Application.Commands.User.Queries.GetUserByEmail;
+namespace Application.Queries.User.GetUserByEmail;
 
 /// <summary>
 /// Handler для отримання користувача за email
 /// </summary>
-public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, ServiceResponse>
+public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, ServiceResponse<UserVM>>
 {
     private readonly UserManager<UserEntity> _userManager;
 
@@ -27,12 +27,12 @@ public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, S
     /// <param name="request">Запит з email користувача</param>
     /// <param name="cancellationToken">Токен скасування</param>
     /// <returns>Дані користувача з ролями</returns>
-    public async Task<ServiceResponse> Handle(GetUserByEmailQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResponse<UserVM>> Handle(GetUserByEmailQuery request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null)
-            return new ServiceResponse(false, "User not found");
+            return new ServiceResponse<UserVM>(false, "User not found");
 
         var roles = await _userManager.GetRolesAsync(user);
 
@@ -44,6 +44,6 @@ public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, S
             UserRoles = roles.ToList()
         };
 
-        return new ServiceResponse(true, "User retrieved successfully", userVM);
+        return new ServiceResponse<UserVM>(true, "User retrieved successfully", userVM);
     }
 }
