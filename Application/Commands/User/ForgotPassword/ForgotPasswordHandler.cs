@@ -16,6 +16,7 @@ public sealed class ForgotPasswordHandler(
 {
 	public async Task Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
 	{
+		// Turnstile token is validated by API filter when present.
 		var user = await userManager.FindByEmailAsync(request.Email);
 		if (user == null)
 			return;
@@ -41,6 +42,6 @@ public sealed class ForgotPasswordHandler(
 
 		await emailQueue.EnqueueEmailAsync(request.Email, callbackUrl);
 
-		return;
+
 	}
 }

@@ -5,6 +5,7 @@ import { LoginStep } from '../components/auth/LoginStep'
 import { RegisterStep } from '../components/auth/RegisterStep'
 import { ForgotPasswordStep } from '../components/auth/ForgotPasswordStep'
 import { authApi } from '../api/authApi'
+import TurnstileWidget from '../components/TurnstileWidget'
 import { useAuthStore } from '../store/authStore'
 
 type Step = 'email' | 'login' | 'register' | 'forgot'
@@ -16,6 +17,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null)
   const setAuth = useAuthStore((state) => state.setAuth)
   const navigate = useNavigate()
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const handleEmailNext = async (enteredEmail: string) => {
     setEmail(enteredEmail)
@@ -23,7 +25,7 @@ export default function Auth() {
     setError(null)
 
     try {
-      const result = await authApi.checkEmail(enteredEmail)
+      const result = await authApi.checkEmail(enteredEmail, turnstileToken ?? undefined)
       setStep(result.exists ? 'login' : 'register')
     } catch {
       setError("Помилка з'єднання з сервером")
@@ -37,7 +39,7 @@ export default function Auth() {
     setError(null)
 
     try {
-      const result = await authApi.login({ email, password })
+  const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
@@ -52,7 +54,7 @@ export default function Auth() {
     setError(null)
 
     try {
-      const result = await authApi.register({ email, name, surname, password, confirmPassword })
+  const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
@@ -71,9 +73,23 @@ export default function Auth() {
     }
   }
 
+
   const handleBack = () => {
     setStep('email')
     setError(null)
+  }
+
+  const handleRequestPasswordReset = async (emailToReset: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      await authApi.requestPasswordReset({ email: emailToReset, turnstileToken: turnstileToken ?? undefined })
+      setStep('email')
+    } catch {
+      setError('Помилка відновлення паролю')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -107,7 +123,12 @@ export default function Auth() {
           />
         )}
 
-        {step === 'forgot' && <ForgotPasswordStep onBack={handleBack} />}
+  {step === 'forgot' && <ForgotPasswordStep onBack={handleBack} onSubmit={handleRequestPasswordReset} />}
+  {(step === 'login' || step === 'register' || step === 'forgot') && (
+    <div className="mt-4">
+      <TurnstileWidget onVerify={(t: string) => setTurnstileToken(t)} />
+    </div>
+  )}
       </div>
     </div>
   )

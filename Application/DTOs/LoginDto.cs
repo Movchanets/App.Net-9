@@ -5,7 +5,8 @@ namespace Application.DTOs;
 /// </summary>
 public record LoginRequest(
     string Email,
-    string Password
+    string Password,
+    string? TurnstileToken = null
 );
 
 /// <summary>
@@ -13,21 +14,26 @@ public record LoginRequest(
 /// </summary>
 public record TokenRequest(
     string AccessToken,
-    string RefreshToken
+    string RefreshToken,
+    string? TurnstileToken = null
+
 );
 
 /// <summary>
 /// Request для ініціації відновлення паролю
 /// </summary>
 public record ForgotPasswordRequest(
-    string Email
+    string Email,
+    string? TurnstileToken = null
 );
 
 /// <summary>
 /// Простий Response для перевірки чи існує email
 /// </summary>
 public record CheckEmailResponse(
-    bool Exists
+    bool Exists,
+    string? TurnstileToken = null
+
 );
 
 /// <summary>
@@ -36,7 +42,8 @@ public record CheckEmailResponse(
 public record ResetPasswordRequest(
     string Email,
     string Token,
-    string NewPassword
+    string NewPassword,
+    string? TurnstileToken = null
 );
 
 /// <summary>

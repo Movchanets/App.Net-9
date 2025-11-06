@@ -3,6 +3,7 @@ using Application.ViewModels;
 using Infrastructure.Data.Constants;
 using Infrastructure.Entities;
 using MediatR;
+using Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Commands.User.CreateUser;
@@ -18,7 +19,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
     /// <summary>
     /// Ініціалізує новий екземпляр RegisterUserHandler
     /// </summary>
-    public RegisterUserHandler( UserManager<UserEntity> userManager, RoleManager<RoleEntity> roleManager)
+    public RegisterUserHandler(UserManager<UserEntity> userManager, RoleManager<RoleEntity> roleManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -58,13 +59,14 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
     /// <returns>Результат операції</returns>
     public async Task<ServiceResponse> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-       
-      var user = new UserEntity
+        // Turnstile token validated by API filter when present.
+
+        var user = new UserEntity
         {
             Email = request.data.Email,
             Name = request.data.Name,
             Surname = request.data.Surname,
-            
+
         };
         user.UserName = await GenerateUniqueUsername(user.Name, user.Surname);
         var result = await _userManager.CreateAsync(user, request.data.Password);
@@ -81,8 +83,8 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
 
         // Призначаємо роль користувачу
         await _userManager.AddToRoleAsync(user, Roles.User);
-        return result.Succeeded ? new ServiceResponse(true, "User created successfully") : 
+        return result.Succeeded ? new ServiceResponse(true, "User created successfully") :
             new ServiceResponse(false, "User creation failed", result.Errors.Select(e => e.Description).ToList());
-        
+
     }
 }

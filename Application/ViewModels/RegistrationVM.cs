@@ -6,9 +6,10 @@ namespace Application.ViewModels;
 /// </summary>
 public record RegistrationVM
 {
-   public required string Email { get; init; }
+    public required string Email { get; init; }
     public required string Name { get; init; }
     public required string Surname { get; init; }
     public required string Password { get; init; }
     public required string ConfirmPassword { get; init; }
+    public string? TurnstileToken { get; init; }
 }

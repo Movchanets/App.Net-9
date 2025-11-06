@@ -92,6 +92,8 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
         >
           {isLoading ? 'Завантаження...' : 'Продовжити'}
         </button>
+
+        
       </form>
 
       <div className="text-center">

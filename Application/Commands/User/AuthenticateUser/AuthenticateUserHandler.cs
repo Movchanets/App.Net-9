@@ -24,6 +24,8 @@ public sealed class AuthenticateUserHandler : IRequestHandler<AuthenticateUserCo
 	public async Task<TokenResponse> Handle(AuthenticateUserCommand request, CancellationToken cancellationToken)
 	{
 		var dto = request.Request;
+		// Turnstile token is validated by API filter when present.
+
 		var user = await _userManager.FindByEmailAsync(dto.Email);
 		if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
 			throw new UnauthorizedAccessException("Invalid credentials");

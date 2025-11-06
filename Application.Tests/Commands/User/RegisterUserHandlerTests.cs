@@ -79,12 +79,12 @@ public class RegisterUserHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Message.Should().Be("User created successfully");
-        
+
         // Перевіряємо, що користувач був створений з правильними даними
         _userManagerMock.Verify(x => x.CreateAsync(
-            It.Is<UserEntity>(u =>Regex.IsMatch(u.UserName, ValidationRegexPattern.UsernameValidationPattern) && u.Email == "test@example.com"),
+            It.Is<UserEntity>(u => Regex.IsMatch(u.UserName, ValidationRegexPattern.UsernameValidationPattern) && u.Email == "test@example.com"),
             "Password123!"), Times.Once);
-        
+
         // Перевіряємо, що роль була призначена
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), Roles.User), Times.Once);
     }
@@ -127,7 +127,7 @@ public class RegisterUserHandlerTests
         result.Message.Should().Be("User creation failed");
         result.Payload.Should().BeOfType<List<string>>()
             .Which.Should().Contain("Password too weak");
-        
+
         // Перевіряємо, що AddToRoleAsync НЕ викликався (бо користувач не був створений)
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), It.IsAny<string>()), Times.Never);
     }
@@ -202,7 +202,7 @@ public class RegisterUserHandlerTests
 
         // Змінна для збереження об'єкта UserEntity, який передається в CreateAsync
         UserEntity capturedUser = null;
-        
+
         // Callback - це техніка Moq, яка дозволяє "підслуховувати" параметри виклику
         _userManagerMock
             .Setup(x => x.CreateAsync(It.IsAny<UserEntity>(), It.IsAny<string>()))

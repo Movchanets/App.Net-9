@@ -2,14 +2,14 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { forgotPasswordFormSchema, type ForgotPasswordFormValues } from '../../validation/authSchemas'
 import { useState } from 'react'
-import { authApi } from '../../api/authApi'
 
 interface ForgotPasswordStepProps {
   onBack: () => void
+  onSubmit: (email: string) => void
 }
 type FormData = ForgotPasswordFormValues
 
-export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
+export function ForgotPasswordStep({ onBack, onSubmit }: ForgotPasswordStepProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -21,10 +21,10 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
     resolver: yupResolver(forgotPasswordFormSchema),
   })
 
-  const onSubmit = async (data: FormData) => {
+  const onFormSubmit = async (data: FormData) => {
     setIsLoading(true)
     try {
-      await authApi.requestPasswordReset({ email: data.email })
+      await onSubmit(data.email)
       setSuccess(true)
     } catch (error) {
       console.error(error)
@@ -72,7 +72,7 @@ export function ForgotPasswordStep({ onBack }: ForgotPasswordStepProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+  <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm text-text-muted">
             Email
