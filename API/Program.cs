@@ -6,7 +6,7 @@ using Application.Mapping;
 using Application.Services;
 using Infrastructure;
 using Infrastructure.Services;
-using API.Services;
+using Application.Services.Email;
 using Infrastructure.Entities;
 using Infrastructure.Initializer;
 using Infrastructure.Repositories;

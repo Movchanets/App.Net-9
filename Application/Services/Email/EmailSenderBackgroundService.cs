@@ -1,10 +1,8 @@
-using System.Threading;
-using System.Threading.Tasks;
+using Application.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Application.Interfaces;
 
-namespace API.Services;
+namespace Application.Services.Email;
 
 public class EmailSenderBackgroundService : BackgroundService
 {
