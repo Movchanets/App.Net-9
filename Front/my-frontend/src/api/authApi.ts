@@ -1,4 +1,3 @@
-import type { To } from 'react-router-dom'
 import axiosClient from './axiousClient'
 
 export interface CheckEmailResponse {
@@ -8,6 +7,7 @@ export interface CheckEmailResponse {
 export interface LoginRequest {
   email: string
   password: string
+  turnstileToken?: string
 }
 
 export interface RegisterRequest {
@@ -16,6 +16,7 @@ export interface RegisterRequest {
   surname: string
   password: string
   confirmPassword: string
+  turnstileToken?: string
 }
 
 export interface AuthResponse {
@@ -34,6 +35,7 @@ export interface TokenResponse {
 
 export interface RequestPasswordResetRequest {
   email: string
+  turnstileToken?: string
 }
 
 export interface ResetPasswordRequest {
@@ -44,8 +46,10 @@ export interface ResetPasswordRequest {
 
 export const authApi = {
   // Перевірка чи існує email в базі
-  checkEmail: async (email: string): Promise<CheckEmailResponse> => {
-    const response = await axiosClient.get<CheckEmailResponse>(`/users/check-email?email=${encodeURIComponent(email)}`)
+  checkEmail: async (email: string, turnstileToken?: string): Promise<CheckEmailResponse> => {
+    const qs = new URLSearchParams({ email })
+    if (turnstileToken) qs.set('turnstileToken', turnstileToken)
+    const response = await axiosClient.get<CheckEmailResponse>(`/users/check-email?${qs.toString()}`)
     return response.data
   },
 
@@ -64,7 +68,6 @@ export const authApi = {
 
     if (access) {
       localStorage.setItem('accessToken', access);
-      localStorage.setItem('token', access);
     }
     if (refresh) {
       localStorage.setItem('refreshToken', refresh);
@@ -84,7 +87,6 @@ export const authApi = {
 
     if (access) {
       localStorage.setItem('accessToken', access);
-      localStorage.setItem('token', access);
     }
     if (refresh) {
       localStorage.setItem('refreshToken', refresh);

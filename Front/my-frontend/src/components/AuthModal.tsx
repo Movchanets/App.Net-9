@@ -4,6 +4,7 @@ import { LoginStep } from './auth/LoginStep'
 import { RegisterStep } from './auth/RegisterStep'
 import { ForgotPasswordStep } from './auth/ForgotPasswordStep'
 import { authApi } from '../api/authApi'
+import TurnstileWidget from './TurnstileWidget'
 import { useAuthStore } from '../store/authStore'
 
 type Step = 'email' | 'login' | 'register' | 'forgot'
@@ -18,6 +19,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const setAuth = useAuthStore((state) => state.setAuth)
 
   if (!isOpen) return null
@@ -28,7 +30,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-      const result = await authApi.checkEmail(enteredEmail)
+      const result = await authApi.checkEmail(enteredEmail, turnstileToken ?? undefined)
       setStep(result.exists ? 'login' : 'register')
     } catch {
       setError("Помилка з'єднання з сервером")
@@ -42,7 +44,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-      const result = await authApi.login({ email, password })
+  const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
       // result is TokenResponse { accessToken, refreshToken }
       setAuth(result.accessToken, result.refreshToken)
       onClose()
@@ -58,7 +60,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-      const result = await authApi.register({ email, name, surname, password, confirmPassword })
+  const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
@@ -132,7 +134,24 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           />
         )}
 
-        {step === 'forgot' && <ForgotPasswordStep onBack={handleBack} />}
+        {step === 'forgot' && <ForgotPasswordStep onBack={handleBack} onSubmit={async (email) => {
+          setIsLoading(true)
+          setError(null)
+          try {
+            await authApi.requestPasswordReset({ email, turnstileToken: turnstileToken ?? undefined })
+            setStep('email')
+          } catch {
+            setError('Помилка відновлення паролю')
+          } finally {
+            setIsLoading(false)
+          }
+        }} />}
+
+        {(step === 'login' || step === 'register' || step === 'forgot') && (
+          <div className="mt-4">
+            <TurnstileWidget onVerify={(t) => setTurnstileToken(t)} />
+          </div>
+        )}
       </div>
     </div>
   )

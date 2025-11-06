@@ -20,6 +20,7 @@ using Application.Commands.User.SendTestEmail;
 using Application.Queries.User.CheckEmail;
 // email services moved into Application layer; controller uses MediatR commands
 using Microsoft.AspNetCore.Authorization;
+using API.Filters;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -27,6 +28,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace API.Controllers;
 
 [Authorize]
+[ServiceFilter(typeof(TurnstileValidationFilter))]
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -34,7 +36,6 @@ public class UsersController : ControllerBase
     private readonly IMediator _mediator;
     private readonly UserManager<UserEntity> _userManager;
     private readonly ITokenService _tokenService;
-    private readonly IMemoryCache _memoryCache;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService, IMemoryCache memoryCache, ILogger<UsersController> logger)
@@ -42,7 +43,6 @@ public class UsersController : ControllerBase
         _mediator = mediator;
         this._userManager = userManager;
         this._tokenService = tokenService;
-        _memoryCache = memoryCache;
         _logger = logger;
     }
 
@@ -68,6 +68,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         _logger.LogInformation("Login attempt for email: {Email}", request.Email);
+
         try
         {
             var tokens = await _mediator.Send(new AuthenticateUserCommand(request));
@@ -106,6 +107,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CreateUser([FromBody] RegistrationVM request)
     {
         _logger.LogInformation("Creating new user with email: {Email}", request.Email);
+
 
         if (request.Password != request.ConfirmPassword)
         {
@@ -169,9 +171,10 @@ public class UsersController : ControllerBase
     /// </summary>
     [AllowAnonymous]
     [HttpGet("check-email")]
-    public async Task<IActionResult> CheckEmail([FromQuery] string email)
+    public async Task<IActionResult> CheckEmail([FromQuery] string email, [FromQuery] string? turnstileToken)
     {
         _logger.LogInformation("Check if email exists: {Email}", email);
+        // Turnstile token (if present) will be validated by TurnstileValidationFilter
         var result = await _mediator.Send(new CheckEmailQuery(email));
         return Ok(result);
     }
@@ -188,7 +191,7 @@ public class UsersController : ControllerBase
         var origin = Request.Headers["Origin"].FirstOrDefault() ?? $"{Request.Scheme}://{Request.Host}";
         try
         {
-            await _mediator.Send(new ForgotPasswordCommand(request.Email, origin));
+            await _mediator.Send(new ForgotPasswordCommand(request.Email, origin, request.TurnstileToken));
             return Ok(new { Message = "If the email exists, a password reset link will be sent." });
         }
         catch (Exception ex)

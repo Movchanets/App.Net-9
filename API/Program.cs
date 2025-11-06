@@ -18,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Serilog;
+using API.Filters;
 
 // Початкове базове логування (до налаштування з appsettings)
 Log.Logger = new LoggerConfiguration()
@@ -41,146 +42,151 @@ try
             retainedFileCountLimit: 7,
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
-// Controllers
-builder.Services.AddControllers();
+    // Controllers
+    builder.Services.AddControllers();
 
-// Scalar + OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi("v1",
-    options =>
-    {
-        // Додаємо Bearer security scheme
-        options.AddDocumentTransformer((document, context, cancellationToken) =>
+    // Scalar + OpenAPI
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddOpenApi("v1",
+        options =>
         {
-            document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+            // Додаємо Bearer security scheme
+            options.AddDocumentTransformer((document, context, cancellationToken) =>
             {
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "Введіть ваш JWT токен у форматі: Bearer {token}"
-            };
-
-            // робимо глобальною вимогу токена для всіх методів
-            document.SecurityRequirements.Add(new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecurityScheme
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
                 {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                }] = new List<string>()
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Введіть ваш JWT токен у форматі: Bearer {token}"
+                };
+
+                // робимо глобальною вимогу токена для всіх методів
+                document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                    }] = new List<string>()
+                });
+
+                return Task.CompletedTask;
             });
+        }
+        );
 
-            return Task.CompletedTask;
+
+    // PostgreSQL
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+    // MediatR
+    builder.Services.AddMediatR(cfg =>
+    {
+        cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
+    });
+    // AutoMapper
+    builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "<License Key Here>", typeof(Program));
+
+    // Repositories
+    builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+    builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequiredLength = 6;
+            options.User.RequireUniqueEmail = true;
+            options.User.AllowedUserNameCharacters =
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
+    // Додаємо політику CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
         });
-    }
-    );
-
-
-// PostgreSQL
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// MediatR
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
-});
-// AutoMapper
-builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "<License Key Here>", typeof(Program));
-
-// Repositories
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
-    {
-        options.Password.RequireDigit = true;
-        options.Password.RequiredLength = 6;
-        options.User.RequireUniqueEmail = true;
-        options.User.AllowedUserNameCharacters =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
-    })
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
-// Додаємо політику CORS
-builder.Services.AddCors(options =>
-{   options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        options.AddPolicy("AllowFrontend", policy =>
+        {
+            policy.WithOrigins("http://localhost:5173", "http://localhost:5188")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
     });
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5188") 
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
-// Memory cache for rate-limiting
-builder.Services.AddMemoryCache();
-// JWT Authentication
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
-// Email sender (SMTP) - reads SmtpSettings from configuration
-// Registered as singleton so hosted background service can consume it safely.
-builder.Services.AddSingleton<Application.Interfaces.IEmailService, SmtpEmailService>();
-// Background email queue and hosted service
+    // Memory cache for rate-limiting
+    builder.Services.AddMemoryCache();
+    // JWT Authentication
+    builder.Services.AddScoped<ITokenService, TokenService>();
+    builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
+    // Email sender (SMTP) - reads SmtpSettings from configuration
+    // Registered as singleton so hosted background service can consume it safely.
+    builder.Services.AddSingleton<Application.Interfaces.IEmailService, SmtpEmailService>();
+    // Background email queue and hosted service
     builder.Services.AddSingleton<BackgroundEmailQueue>();
     builder.Services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<BackgroundEmailQueue>());
     builder.Services.AddHostedService<EmailSenderBackgroundService>();
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    // Cloudflare Turnstile service
+    builder.Services.AddHttpClient<Application.Interfaces.ITurnstileService, Application.Services.Security.TurnstileService>();
+    // Action filter which validates incoming Turnstile tokens when present
+    builder.Services.AddScoped<TurnstileValidationFilter>();
+    builder.Services.AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-        ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!))
-    };
-});
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }).AddJwtBearer(options =>
     {
-        options.Title = "This is my Scalar API";
-        options.DarkMode = true;
-        options.Favicon = "path";
-        options.DefaultHttpClient = new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.CSharp, ScalarClient.RestSharp);
-        options.HideModels = false;
-        options.Layout = ScalarLayout.Modern;
-        options.ShowSidebar = true;
-
-        options.Authentication = new ScalarAuthenticationOptions
+        options.TokenValidationParameters = new TokenValidationParameters
         {
-            PreferredSecurityScheme = "Bearer"
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!))
         };
     });
-}
-app.UseAuthentication();
-app.UseAuthorization();
+
+    var app = builder.Build();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+        app.MapScalarApiReference(options =>
+        {
+            options.Title = "This is my Scalar API";
+            options.DarkMode = true;
+            options.Favicon = "path";
+            options.DefaultHttpClient = new KeyValuePair<ScalarTarget, ScalarClient>(ScalarTarget.CSharp, ScalarClient.RestSharp);
+            options.HideModels = false;
+            options.Layout = ScalarLayout.Modern;
+            options.ShowSidebar = true;
+
+            options.Authentication = new ScalarAuthenticationOptions
+            {
+                PreferredSecurityScheme = "Bearer"
+            };
+        });
+    }
+    app.UseAuthentication();
+    app.UseAuthorization();
 
 
 
-app.UseCors("AllowFrontend");
-app.MapControllers();
+    app.UseCors("AllowFrontend");
+    app.MapControllers();
 
 
 
-await app.SeedDataAsync();
+    await app.SeedDataAsync();
 
     Log.Information("Application started successfully");
     app.Run();

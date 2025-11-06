@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       // store tokens
       if (accessToken) {
         localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('token', accessToken) // legacy key
+        
       }
       if (refreshToken) {
         localStorage.setItem('refreshToken', refreshToken)
@@ -56,13 +56,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ token: accessToken, refreshToken: refreshToken || null, user, isAuthenticated: !!accessToken })
     } catch {
       // on parse error still set token
-      localStorage.setItem('token', accessToken)
+      localStorage.setItem('accessToken', accessToken)
       set({ token: accessToken, refreshToken: refreshToken || null, user: null, isAuthenticated: !!accessToken })
     }
   },
   
   logout: () => {
-    localStorage.removeItem('token')
+   
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     set({ token: null, refreshToken: null, user: null, isAuthenticated: false })

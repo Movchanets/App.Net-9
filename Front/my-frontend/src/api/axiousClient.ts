@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { TokenResponse } from './authApi';
 
 const BASE_URL = "http://localhost:5188/api";
 
@@ -34,7 +35,7 @@ function isTokenExpired(token: string | null, offsetSeconds = 30) {
 let refreshInProgress: Promise<void> | null = null;
 
 async function refreshTokensIfNeeded(): Promise<void> {
-  const access = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const access = localStorage.getItem("accessToken");
   const refresh = localStorage.getItem("refreshToken");
 
   // If no access token present, nothing to refresh here
@@ -58,16 +59,16 @@ async function refreshTokensIfNeeded(): Promise<void> {
         { headers: { "Content-Type": "application/json" } }
       );
 
-      const data = res.data as any;
+      const data = res.data as TokenResponse;
       // Expecting { AccessToken, RefreshToken }
-      const newAccess = data?.AccessToken ?? data?.accessToken ?? data?.token;
-      const newRefresh = data?.RefreshToken ?? data?.refreshToken ?? null;
+      const newAccess = data?.accessToken;
+      const newRefresh = data?.refreshToken;
 
       if (newAccess) {
         localStorage.setItem("accessToken", newAccess);
-        // Keep backward-compatible 'token' key used elsewhere
-        localStorage.setItem("token", newAccess);
       }
+
+      
       if (newRefresh) {
         localStorage.setItem("refreshToken", newRefresh);
       }
@@ -75,7 +76,7 @@ async function refreshTokensIfNeeded(): Promise<void> {
       // If refresh fails, clear local tokens (forces user to login)
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      localStorage.removeItem("token");
+    
       throw err;
     } finally {
       refreshInProgress = null;
@@ -94,7 +95,7 @@ axiosClient.interceptors.request.use(async (config) => {
     console.warn("Token refresh failed", err);
   }
 
-  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const token = localStorage.getItem("accessToken");
   if (token && config.headers) {
     (config.headers as any).Authorization = `Bearer ${token}`;
   }
