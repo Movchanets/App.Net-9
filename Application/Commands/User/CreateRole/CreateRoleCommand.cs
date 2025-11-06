@@ -5,5 +5,5 @@ namespace Application.Commands.User;
 
 public class CreateRoleCommand : IRequest<ServiceResponse>
 {
-    public string RoleName { get; set; }
+    public string RoleName { get; init; }
 }

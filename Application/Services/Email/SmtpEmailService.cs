@@ -1,11 +1,10 @@
 using System.Net;
 using System.Net.Mail;
-using System.Threading.Tasks;
 using Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace API.Services;
+namespace Application.Services.Email;
 
 public class SmtpEmailService : IEmailService
 {
@@ -20,21 +19,21 @@ public class SmtpEmailService : IEmailService
 
     public async Task SendPasswordResetEmailAsync(string toEmail, string callbackUrl)
     {
-        var section = _configuration.GetSection("SmtpSettings");
-        var host = section.GetValue<string>("Host");
-        var port = section.GetValue<int?>("Port") ?? 25;
-        var user = section.GetValue<string>("Username");
-        var pass = section.GetValue<string>("Password");
-        var from = section.GetValue<string>("From") ?? user ?? "noreply@example.com";
-        var enableSsl = section.GetValue<bool?>("EnableSsl") ?? true;
+        // Read settings via indexer to avoid requiring the configuration binder package
+        var host = _configuration["SmtpSettings:Host"];
+        var port = int.TryParse(_configuration["SmtpSettings:Port"], out var p) ? p : 25;
+        var user = _configuration["SmtpSettings:Username"];
+        var pass = _configuration["SmtpSettings:Password"];
+        var from = _configuration["SmtpSettings:From"] ?? user ?? "noreply@example.com";
+        var enableSsl = !bool.TryParse(_configuration["SmtpSettings:EnableSsl"], out var ssl) || ssl;
 
         // Try to load HTML template if configured, otherwise use plaintext
-        var templatePath = section.GetValue<string>("TemplatePath");
+        var templatePath = _configuration["SmtpSettings:TemplatePath"];
         string body;
         bool isHtml = false;
         if (!string.IsNullOrEmpty(templatePath) && System.IO.File.Exists(templatePath))
         {
-            body = System.IO.File.ReadAllText(templatePath);
+            body = await System.IO.File.ReadAllTextAsync(templatePath);
             body = body.Replace("{{CallbackUrl}}", callbackUrl);
             body = body.Replace("{{Email}}", toEmail);
             isHtml = true;
@@ -44,7 +43,7 @@ public class SmtpEmailService : IEmailService
             body = $"Please use the following link to reset your password:\n\n{callbackUrl}\n\nIf you didn't request this, ignore this email.";
         }
 
-        var fromName = section.GetValue<string>("FromName") ?? from;
+        var fromName = _configuration["SmtpSettings:FromName"] ?? from;
         var fromAddress = new MailAddress(from, fromName);
 
         using var message = new MailMessage();

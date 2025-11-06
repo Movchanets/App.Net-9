@@ -25,6 +25,7 @@ function decodeJwt(token: string) {
 function isTokenExpired(token: string | null, offsetSeconds = 30) {
   if (!token) return true;
   const payload = decodeJwt(token);
+  console.log('Decoded JWT payload:', payload); // Додано для налагодження
   if (!payload || !payload.exp) return true;
   const now = Math.floor(Date.now() / 1000);
   return payload.exp <= now + offsetSeconds;

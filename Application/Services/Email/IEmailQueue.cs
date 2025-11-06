@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
-
-namespace API.Services;
+namespace Application.Services.Email;
 
 public interface IEmailQueue
 {
