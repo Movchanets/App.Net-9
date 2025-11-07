@@ -10,3 +10,4 @@ API/appsettings.*.json
 *.DotSettings.user
 *.md
 .cursor/
+Front/.env
