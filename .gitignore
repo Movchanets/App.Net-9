@@ -9,5 +9,6 @@ API/appsettings.json
 API/appsettings.*.json
 *.DotSettings.user
 *.md
+!/README.md
 .cursor/
 Front/.env
