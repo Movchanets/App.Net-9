@@ -1,58 +1,138 @@
 {
-  "greeting": "Привіт, {{name}}",
-  "language": "Мова",
-  "ukrainian": "Українська",
+  "greeting": "Hello, {{name}}",
+  "language": "Language",
+  "ukrainian": "Ukrainian",
   "english": "English",
-  "confirm_logout_title": "Підтвердіть вихід",
-  "confirm_logout_text": "Ви дійсно хочете вийти з облікового запису?",
-  "cancel": "Скасувати",
-  "logout": "Вийти",
+  "confirm_logout_title": "Confirm logout",
+  "confirm_logout_text": "Are you sure you want to sign out?",
+  "cancel": "Cancel",
+  "logout": "Sign out",
   "menu": {
-    "orders": "Мої замовлення",
-    "tracking": "Відстеження",
-    "favorites": "Обране",
-    "wallet": "Мій гаманець",
-    "settings": "Налаштування",
-    "security": "Логін та пароль",
-    "support": "Підтримка",
-    "help": "Довідка"
+    "orders": "My orders",
+    "tracking": "Tracking",
+    "favorites": "Favorites",
+    "wallet": "Wallet",
+    "settings": "Settings",
+    "security": "Login & password",
+    "support": "Support",
+    "help": "Help"
+  },
+
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contacts": "Contacts"
+  },
+
+  "header": {
+    "catalog": "Catalog",
+    "learn_more": "Learn more",
+    "cart": "Cart",
+    "cabinet": "Cabinet",
+    "my_profile": "My profile"
+  },
+
+  "home": {
+    "popular_categories": "Popular categories",
+    "recommendations": "Recommendations",
+    "cta": {
+      "catalog": "Catalog",
+      "learn_more": "Learn more"
+    }
+  },
+
+  "settings": {
+    "tabs": {
+      "profile": "Profile",
+      "security": "Login & password",
+      "notifications": "Notifications",
+      "payments": "Payments"
+    },
+    "return_to_cabinet": "Back to cabinet",
+    "notifications": {
+      "title": "Notifications",
+      "description": "Email & push notification settings."
+    },
+    "profile": {
+      "title": "Profile information",
+      "description": "Change your name, email and profile photo here."
+    },
+    "security": {
+      "title": "Security",
+      "description": "Change password or enable two-factor authentication."
+    },
+    "payments": {
+      "title": "Payments",
+      "description": "Manage payment methods and history."
+    }
   },
 
   "auth": {
-    "enter_email": "Введіть ваш email для продовження",
-    "sign_in_with_google": "Увійти через Google",
-    "or_via_email": "або через email",
-    "email_label": "Email"
+    "login": "Sign in",
+    "signing_in": "Signing in...",
+    "back": "Back",
+    "login_heading": "Sign in",
+    "login_prompt": "Sign in to your account {{email}}",
+    "enter_email": "Enter your email to continue",
+    "password_label": "Password",
+    "email_step_heading": "Sign in or register",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "forgot_password": "Forgot password?",
+    "sign_in_with_google": "Sign in with Google",
+    "or_via_email": "or via email"
+  },
+
+  "reset": {
+    "title": "Reset password",
+    "enter_new_password": "Enter a new password for {{email}}",
+    "new_password_label": "New password",
+    "confirm_password_label": "Confirm password",
+    "saving": "Saving...",
+    "save": "Save new password",
+    "success_title": "Password changed successfully",
+    "success_text": "You can now sign in with your new password.",
+    "back_to_login": "Return to sign in"
   },
 
   "forgot": {
-    "instructions": "Введіть email та ми надішлемо інструкції для відновлення."
+    "instructions": "Enter your email and we'll send recovery instructions.",
+    "title": "Forgot password",
+    "success_title": "Check your inbox",
+    "success_text": "We've sent password recovery instructions to your email address.",
+    "back_to_login": "Return to sign in",
+    "sending": "Sending...",
+    "send": "Send"
   },
+
+ 
 
   "site": {
     "name": "ShopNine",
     "about": {
-      "description": "ShopNine — це сучасний інтернет-магазин, що поєднує стильний дизайн, зручність та надійність. Ми ретельно добираємо асортимент і працюємо лише з перевіреними постачальниками."
+      "title": "About",
+      "description": "ShopNine is a modern online store combining stylish design, convenience and reliability. We carefully select products and work only with trusted suppliers."
     },
     "home": {
-      "tagline": "Відкрийте для себе добірку якісних товарів за чесними цінами. Швидка доставка, безпечна оплата і підтримка 24/7."
+      "tagline": "Discover a curated selection of quality products at fair prices. Fast delivery, secure payment and 24/7 support."
     }
   },
+  
 
   "support": {
-    "tagline": "Підтримка клієнтів 24/7."
-  },
-
-  "settings": {
-    "notifications": {
-      "description": "Налаштування email та push-сповіщень."
-    }
+    "tagline": "24/7 customer support."
   },
 
   "contact": {
     "email": "E-mail: support@shopnine.com",
-    "phone": "Телефон: +380 (00) 123-45-67",
-    "hours": "Графік: Пн-Пт, 9:00 — 18:00"
+    "phone": "Phone: +380 (00) 123-45-67",
+    "hours": "Hours: Mon-Fri, 9:00 — 18:00"
+  },
+  "footer": {
+    "copy": "© {{year}} ShopNine. All rights reserved.",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "support": "Support"
   },
 
   "common": {

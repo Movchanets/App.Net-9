@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import LanguageSelector from './LanguageSelector'
 import type { User } from '../store/authStore'
 import { useAuthStore } from '../store/authStore'
@@ -16,6 +17,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   }`
 
 export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
+  const { t } = useTranslation()
   // Keep mounted during close animation
   const [mounted, setMounted] = useState(isOpen)
   const [closing, setClosing] = useState(false)
@@ -97,22 +99,22 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
   <nav className="flex flex-col gap-1">
           <NavLink to="/cabinet/orders" className={linkClass} onClick={onClose}>
             <span>📦</span>
-            Мої замовлення
+            {t('menu.orders')}
           </NavLink>
 
           <NavLink to="/cabinet/tracking" className={linkClass} onClick={onClose}>
             <span>🚚</span>
-            Відстеження
+            {t('menu.tracking')}
           </NavLink>
 
           <NavLink to="/cabinet/favorites" className={linkClass} onClick={onClose}>
             <span>🤍</span>
-            Обране
+            {t('menu.favorites')}
           </NavLink>
 
           <NavLink to="/cabinet/wallet" className={linkClass} onClick={onClose}>
             <span>👛</span>
-            Мій гаманець
+            {t('menu.wallet')}
           </NavLink>
 
           {/* <NavLink to="/discounts" className={linkClass} onClick={onClose}>
@@ -122,23 +124,23 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
 
           <NavLink to="/cabinet/user/settings?tab=profile" className={linkClass} onClick={onClose}>
             <span>⚙️</span>
-            Налаштування
+            {t('menu.settings')}
           </NavLink>
 
           {/* quick shortcut into specific settings tab */}
           <NavLink to="/cabinet/user/settings?tab=security" className={linkClass} onClick={onClose}>
             <span>🔒</span>
-            Логін та пароль
+            {t('menu.security')}
           </NavLink>
 
           <NavLink to="/cabinet/support" className={linkClass} onClick={onClose}>
             <span>📞</span>
-            Підтримка
+            {t('menu.support')}
           </NavLink>
 
           <NavLink to="/cabinet/help" className={linkClass} onClick={onClose}>
             <span>❓</span>
-            Довідка
+            {t('menu.help')}
           </NavLink>
         </nav>
 
@@ -153,7 +155,7 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
             onClick={() => setConfirmOpen(true)}
             className="w-full rounded-md border border-text/20 px-4 py-2 text-sm text-text hover:bg-text/5 bg-white dark:bg-[#071428]"
           >
-            Вийти
+            {t('logout')}
           </button>
         </div>
       </aside>
@@ -166,14 +168,14 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
             aria-modal="true"
             className="relative z-10 w-full max-w-md rounded-md bg-white dark:bg-[#071428] p-6 shadow-lg"
           >
-            <h3 className="text-lg font-semibold text-text dark:text-white">Підтвердіть вихід</h3>
-            <p className="mt-2 text-sm text-text-muted dark:text-text-muted/80">Ви дійсно хочете вийти з облікового запису?</p>
+            <h3 className="text-lg font-semibold text-text dark:text-white">{t('confirm_logout_title')}</h3>
+            <p className="mt-2 text-sm text-text-muted dark:text-text-muted/80">{t('confirm_logout_text')}</p>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 onClick={() => setConfirmOpen(false)}
                 className="rounded-md px-3 py-2 text-sm bg-transparent text-text-muted hover:text-text"
               >
-                Скасувати
+                {t('cancel')}
               </button>
               <button
                 onClick={() => {
@@ -183,7 +185,7 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
                 }}
                 className="rounded-md bg-brand px-3 py-2 text-sm text-white"
               >
-                Вийти
+                {t('logout')}
               </button>
             </div>
           </div>

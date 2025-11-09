@@ -1,14 +1,16 @@
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-
-const tabs: { id: string; label: string }[] = [
-  { id: 'profile', label: 'Профіль' },
-  { id: 'security', label: 'Логін та пароль' },
-  { id: 'notifications', label: 'Сповіщення' },
-  { id: 'payments', label: 'Платежі' },
-]
+import { useTranslation } from 'react-i18next'
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
+  const tabs: { id: string; label: string }[] = [
+    { id: 'profile', label: t('settings.tabs.profile') },
+    { id: 'security', label: t('settings.tabs.security') },
+    { id: 'notifications', label: t('settings.tabs.notifications') },
+    { id: 'payments', label: t('settings.tabs.payments') },
+  ]
+
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
@@ -31,7 +33,7 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 text-text dark:text-white">
-      <h1 className="text-2xl font-semibold mb-4 text-text dark:text-white">Налаштування</h1>
+      <h1 className="text-2xl font-semibold mb-4 text-text dark:text-white">{t('menu.settings')}</h1>
 
       <div className="mb-6 border-b border-surface/60 dark:border-surface/30">
         <nav className="flex gap-2 -mb-px">
@@ -55,35 +57,35 @@ export default function SettingsPage() {
       <div className="bg-white dark:bg-[#071428] p-6 rounded-md shadow-sm text-text dark:text-white">
         {active === 'profile' && (
           <section>
-            <h2 className="text-lg font-medium mb-2 text-text dark:text-white">Інформація профілю</h2>
-            <p className="text-sm text-text-muted dark:text-text-muted/80">Тут можна змінити ім'я, емейл та фото профілю.</p>
+            <h2 className="text-lg font-medium mb-2 text-text dark:text-white">{t('settings.profile.title')}</h2>
+            <p className="text-sm text-text-muted dark:text-text-muted/80">{t('settings.profile.description')}</p>
           </section>
         )}
 
         {active === 'security' && (
           <section>
-            <h2 className="text-lg font-medium mb-2">Безпека</h2>
-            <p className="text-sm text-text-muted">Тут можна змінити пароль або включити двофакторну аутентифікацію.</p>
+            <h2 className="text-lg font-medium mb-2">{t('settings.security.title')}</h2>
+            <p className="text-sm text-text-muted">{t('settings.security.description')}</p>
           </section>
         )}
 
         {active === 'notifications' && (
           <section>
-            <h2 className="text-lg font-medium mb-2">Сповіщення</h2>
-            <p className="text-sm text-text-muted">Налаштування email та push-сповіщень.</p>
+            <h2 className="text-lg font-medium mb-2">{t('settings.notifications.title')}</h2>
+            <p className="text-sm text-text-muted">{t('settings.notifications.description')}</p>
           </section>
         )}
 
         {active === 'payments' && (
           <section>
-            <h2 className="text-lg font-medium mb-2">Платежі</h2>
-            <p className="text-sm text-text-muted">Керування платіжними методами та історією.</p>
+            <h2 className="text-lg font-medium mb-2">{t('settings.payments.title')}</h2>
+            <p className="text-sm text-text-muted">{t('settings.payments.description')}</p>
           </section>
         )}
 
         <div className="mt-6">
           <Link to="/cabinet" className="text-sm text-brand hover:underline">
-            Повернутись до кабінету
+            {t('settings.return_to_cabinet')}
           </Link>
         </div>
       </div>

@@ -27,7 +27,7 @@ const LANGS: { code: string; labelKey: string; labelFallback: string; Flag: () =
   { code: 'en', labelKey: 'english', labelFallback: 'English', Flag: FlagGB },
 ]
 
-export default function LanguageSelector({ className, align = 'right' }: { className?: string; align?: 'left' | 'right' }) {
+export default function LanguageSelector({ className, align = 'right', dropUp = false }: { className?: string; align?: 'left' | 'right'; dropUp?: boolean }) {
   const { i18n, t } = useTranslation()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
@@ -88,7 +88,9 @@ export default function LanguageSelector({ className, align = 'right' }: { class
           <div
             role="menu"
             aria-orientation="vertical"
-            className={`absolute mt-2 w-44 origin-top-${align === 'right' ? 'right' : 'left'} rounded-md bg-white dark:bg-[#071428] shadow-lg ring-1 ring-black/5 focus:outline-none z-50 ${
+            className={`absolute ${
+              dropUp ? `bottom-full mb-2 origin-bottom-${align === 'right' ? 'right' : 'left'}` : `mt-2 origin-top-${align === 'right' ? 'right' : 'left'}`
+            } w-44 rounded-md bg-white dark:bg-[#071428] shadow-lg ring-1 ring-black/5 focus:outline-none z-50 ${
               align === 'right' ? 'right-0' : 'left-0'
             }`}
           >

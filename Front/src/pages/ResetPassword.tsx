@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { authApi } from '../api/authApi'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const schema = yup.object({
   newPassword: yup.string().min(6).required('Обов\'язкове поле'),
@@ -13,6 +14,7 @@ const schema = yup.object({
 type FormData = yup.InferType<typeof schema>
 
 export default function ResetPassword() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const email = searchParams.get('email') ?? ''
@@ -36,23 +38,23 @@ export default function ResetPassword() {
       <div className="w-full max-w-md rounded-2xl bg-surface-card p-8 shadow-2xl">
         {!success ? (
           <>
-            <h2 className="text-2xl font-bold text-text">Скидання паролю</h2>
-            <p className="mt-2 text-sm text-text-muted">Введіть новий пароль для {email}</p>
+            <h2 className="text-2xl font-bold text-text">{t('reset.title')}</h2>
+            <p className="mt-2 text-sm text-text-muted">{t('reset.enter_new_password', { email })}</p>
 
             <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <label className="mb-1 block text-sm text-text-muted">Новий пароль</label>
+                <label className="mb-1 block text-sm text-text-muted">{t('reset.new_password_label')}</label>
                 <input {...register('newPassword')} type="password" autoComplete="new-password" className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text" />
                 {errors.newPassword && <p className="mt-1 text-sm text-red-500">{errors.newPassword.message}</p>}
               </div>
               <div>
-                <label className="mb-1 block text-sm text-text-muted">Підтвердіть пароль</label>
+                <label className="mb-1 block text-sm text-text-muted">{t('reset.confirm_password_label')}</label>
                 <input {...register('confirmPassword')} type="password" autoComplete="new-password" className="w-full rounded-lg border border-text/20 bg-transparent px-4 py-3 text-text" />
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>}
               </div>
 
               <button type="submit" disabled={isSubmitting} className="btn-primary w-full">
-                {isSubmitting ? 'Збереження...' : 'Зберегти новий пароль'}
+                {isSubmitting ? t('reset.saving') : t('reset.save')}
               </button>
             </form>
           </>

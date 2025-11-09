@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import LanguageSelector from '../../components/LanguageSelector'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -10,6 +11,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export default function Cabinet() {
   const { logout, user } = useAuthStore()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [confirmOpen, setConfirmOpen] = useState(false)
   return (
@@ -30,31 +32,31 @@ export default function Cabinet() {
               <nav className="flex flex-col gap-1 flex-1 overflow-auto">
                 <NavLink to="/cabinet/orders" className={linkClass}>
                   <span>📦</span>
-                  Мої замовлення
+                  {t('menu.orders')}
                 </NavLink>
                 <NavLink to="/cabinet/tracking" className={linkClass}>
                   <span>🚚</span>
-                  Відстеження
+                  {t('menu.tracking')}
                 </NavLink>
                 <NavLink to="/cabinet/favorites" className={linkClass}>
                   <span>🤍</span>
-                  Обране
+                  {t('menu.favorites')}
                 </NavLink>
                 <NavLink to="/cabinet/wallet" className={linkClass}>
                   <span>👛</span>
-                  Мій гаманець
+                  {t('menu.wallet')}
                 </NavLink>
                 <NavLink to="/cabinet/user/settings?tab=profile" className={linkClass}>
                   <span>⚙️</span>
-                  Налаштування
+                  {t('menu.settings')}
                 </NavLink>
                 <NavLink to="/cabinet/support" className={linkClass}>
                   <span>📞</span>
-                  Підтримка
+                  {t('menu.support')}
                 </NavLink>
                 <NavLink to="/cabinet/help" className={linkClass}>
                   <span>❓</span>
-                  Довідка
+                  {t('menu.help')}
                 </NavLink>
               </nav>
 
@@ -67,7 +69,7 @@ export default function Cabinet() {
                   onClick={() => setConfirmOpen(true)}
                   className="w-full rounded-md border border-text/20 px-4 py-2 text-sm text-text hover:bg-text/5"
                 >
-                  Вийти
+                  {t('logout')}
                 </button>
               </div>
             </aside>
@@ -77,14 +79,14 @@ export default function Cabinet() {
               <div className="fixed inset-0 z-60 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmOpen(false)} />
                 <div className="relative z-10 w-full max-w-md rounded-md bg-white dark:bg-[#071428] p-6 shadow-lg">
-                  <h3 className="text-lg font-semibold text-text dark:text-white">Підтвердіть вихід</h3>
-                  <p className="mt-2 text-sm text-text-muted dark:text-text-muted/80">Ви дійсно хочете вийти з облікового запису?</p>
+                  <h3 className="text-lg font-semibold text-text dark:text-white">{t('confirm_logout_title')}</h3>
+                  <p className="mt-2 text-sm text-text-muted dark:text-text-muted/80">{t('confirm_logout_text')}</p>
                   <div className="mt-4 flex justify-end gap-2">
                     <button
                       onClick={() => setConfirmOpen(false)}
                       className="rounded-md px-3 py-2 text-sm bg-transparent text-text-muted hover:text-text"
                     >
-                      Скасувати
+                      {t('cancel')}
                     </button>
                     <button
                       onClick={() => {
@@ -94,7 +96,7 @@ export default function Cabinet() {
                       }}
                       className="rounded-md bg-brand px-3 py-2 text-sm text-white"
                     >
-                      Вийти
+                      {t('logout')}
                     </button>
                   </div>
                 </div>

@@ -18,41 +18,121 @@
     "help": "Довідка"
   },
 
+  "nav": {
+    "home": "Головна",
+    "about": "Про нас",
+    "contacts": "Контакти"
+  },
+
+  "header": {
+    "catalog": "До каталогу",
+    "learn_more": "Дізнатись більше",
+    "cart": "Кошик",
+    "cabinet": "Кабінет",
+    "my_profile": "Мій профіль"
+  },
+
+  "home": {
+    "popular_categories": "Популярні категорії",
+    "recommendations": "Рекомендації",
+    "cta": {
+      "catalog": "До каталогу",
+      "learn_more": "Дізнатись більше"
+    }
+  },
+
+  "settings": {
+    "tabs": {
+      "profile": "Профіль",
+      "security": "Логін та пароль",
+      "notifications": "Сповіщення",
+      "payments": "Платежі"
+    },
+    "return_to_cabinet": "Повернутись до кабінету",
+    "profile": {
+      "title": "Інформація профілю",
+      "description": "Тут можна змінити ім'я, емейл та фото профілю."
+    },
+    "security": {
+      "title": "Безпека",
+      "description": "Тут можна змінити пароль або включити двофакторну аутентифікацію."
+    },
+    "notifications": {
+      "title": "Сповіщення",
+      "description": "Налаштування email та push-сповіщень."
+    },
+    "payments": {
+      "title": "Платежі",
+      "description": "Керування платіжними методами та історією."
+    }
+  },
+
   "auth": {
+    "login": "Увійти",
+    "signing_in": "Вхід...",
+    "back": "Назад",
+    "login_heading": "Вхід",
+    "login_prompt": "Увійдіть в обліковий запис {{email}}",
     "enter_email": "Введіть ваш email для продовження",
+    "password_label": "Пароль",
+    "email_step_heading": "Вхід або реєстрація",
+    "continue": "Продовжити",
+    "loading": "Завантаження...",
+    "forgot_password": "Забули пароль?",
     "sign_in_with_google": "Увійти через Google",
-    "or_via_email": "або через email",
-    "email_label": "Email"
+    "or_via_email": "або через email"
+  },
+
+  "reset": {
+    "title": "Скидання паролю",
+    "enter_new_password": "Введіть новий пароль для {{email}}",
+    "new_password_label": "Новий пароль",
+    "confirm_password_label": "Підтвердіть пароль",
+    "saving": "Збереження...",
+    "save": "Зберегти новий пароль",
+    "success_title": "Пароль успішно змінено",
+    "success_text": "Тепер ви можете увійти з новим паролем.",
+    "back_to_login": "Повернутися до входу"
   },
 
   "forgot": {
-    "instructions": "Введіть email та ми надішлемо інструкції для відновлення."
+    "instructions": "Введіть email та ми надішлемо інструкції для відновлення.",
+    "title": "Відновлення паролю",
+    "success_title": "Перевірте пошту",
+    "success_text": "Ми відправили інструкції з відновлення паролю на вашу електронну адресу.",
+    "back_to_login": "Повернутися до входу",
+    "sending": "Надсилання...",
+    "send": "Надіслати"
   },
 
   "site": {
     "name": "ShopNine",
     "about": {
+      "title": "Про нас",
       "description": "ShopNine — це сучасний інтернет-магазин, що поєднує стильний дизайн, зручність та надійність. Ми ретельно добираємо асортимент і працюємо лише з перевіреними постачальниками."
     },
     "home": {
       "tagline": "Відкрийте для себе добірку якісних товарів за чесними цінами. Швидка доставка, безпечна оплата і підтримка 24/7."
     }
   },
+  
 
   "support": {
     "tagline": "Підтримка клієнтів 24/7."
   },
 
-  "settings": {
-    "notifications": {
-      "description": "Налаштування email та push-сповіщень."
-    }
-  },
+  
 
   "contact": {
     "email": "E-mail: support@shopnine.com",
     "phone": "Телефон: +380 (00) 123-45-67",
     "hours": "Графік: Пн-Пт, 9:00 — 18:00"
+  },
+  "footer": {
+    "copy": "© {{year}} ShopNine. Всі права захищено.",
+    "terms": "Умови",
+    "privacy": "Конфіденційність",
+    "support": "Підтримка"
   },
 
   "common": {
