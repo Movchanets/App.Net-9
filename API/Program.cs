@@ -44,6 +44,8 @@ try
 
     // Controllers
     builder.Services.AddControllers();
+    // Application services (validators, MediatR behaviors, etc.)
+    builder.Services.AddApplicationServices();
 
     // Scalar + OpenAPI
     builder.Services.AddEndpointsApiExplorer();
