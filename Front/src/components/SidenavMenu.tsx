@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import LanguageSelector from './LanguageSelector'
 import type { User } from '../store/authStore'
 import { useAuthStore } from '../store/authStore'
 
@@ -140,6 +141,11 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
             Довідка
           </NavLink>
         </nav>
+
+        {/* language selector */}
+        <div className="mt-4">
+          <LanguageSelector className="mb-3" />
+        </div>
 
         {/* logout button placed inside the aside so it's reachable */}
         <div className="mt-auto">

@@ -1,0 +1,61 @@
+{
+  "greeting": "Привіт, {{name}}",
+  "language": "Мова",
+  "ukrainian": "Українська",
+  "english": "English",
+  "confirm_logout_title": "Підтвердіть вихід",
+  "confirm_logout_text": "Ви дійсно хочете вийти з облікового запису?",
+  "cancel": "Скасувати",
+  "logout": "Вийти",
+  "menu": {
+    "orders": "Мої замовлення",
+    "tracking": "Відстеження",
+    "favorites": "Обране",
+    "wallet": "Мій гаманець",
+    "settings": "Налаштування",
+    "security": "Логін та пароль",
+    "support": "Підтримка",
+    "help": "Довідка"
+  },
+
+  "auth": {
+    "enter_email": "Введіть ваш email для продовження",
+    "sign_in_with_google": "Увійти через Google",
+    "or_via_email": "або через email",
+    "email_label": "Email"
+  },
+
+  "forgot": {
+    "instructions": "Введіть email та ми надішлемо інструкції для відновлення."
+  },
+
+  "site": {
+    "name": "ShopNine",
+    "about": {
+      "description": "ShopNine — це сучасний інтернет-магазин, що поєднує стильний дизайн, зручність та надійність. Ми ретельно добираємо асортимент і працюємо лише з перевіреними постачальниками."
+    },
+    "home": {
+      "tagline": "Відкрийте для себе добірку якісних товарів за чесними цінами. Швидка доставка, безпечна оплата і підтримка 24/7."
+    }
+  },
+
+  "support": {
+    "tagline": "Підтримка клієнтів 24/7."
+  },
+
+  "settings": {
+    "notifications": {
+      "description": "Налаштування email та push-сповіщень."
+    }
+  },
+
+  "contact": {
+    "email": "E-mail: support@shopnine.com",
+    "phone": "Телефон: +380 (00) 123-45-67",
+    "hours": "Графік: Пн-Пт, 9:00 — 18:00"
+  },
+
+  "common": {
+    "email": "E-mail"
+  }
+}

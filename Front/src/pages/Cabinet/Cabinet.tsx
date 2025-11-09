@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useState } from 'react'
+import LanguageSelector from '../../components/LanguageSelector'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 text-sm rounded-md transition-colors ${
@@ -56,6 +57,11 @@ export default function Cabinet() {
                   Довідка
                 </NavLink>
               </nav>
+
+              <div className="mt-4">
+                <LanguageSelector align="left" />
+              </div>
+
               <div className="mt-4">
                 <button
                   onClick={() => setConfirmOpen(true)}
