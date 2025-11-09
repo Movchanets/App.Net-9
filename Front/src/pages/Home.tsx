@@ -1,19 +1,18 @@
+import { useTranslation } from 'react-i18next'
+
 export default function Home() {
+  const { t } = useTranslation()
+
   return (
     <div className="space-y-10">
       <section className="grid gap-6 md:grid-cols-2 md:items-center">
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold tracking-tight text-text md:text-5xl">
-            Магазин сучасних товарів
-          </h1>
-          <p className="max-w-prose text-text-muted">
-            Відкрийте для себе добірку якісних товарів за чесними цінами. Швидка доставка,
-            безпечна оплата і підтримка 24/7.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-text md:text-5xl">{t('site.name')}</h1>
+          <p className="max-w-prose text-text-muted">{t('site.home.tagline')}</p>
           <div className="flex gap-3">
-            <button className="btn-primary">До каталогу</button>
+            <button className="btn-primary">{t('home.cta.catalog')}</button>
             <button className="rounded-md border border-text/20 px-4 py-2 text-text hover:bg-text/5">
-              Дізнатись більше
+              {t('home.cta.learn_more')}
             </button>
           </div>
         </div>

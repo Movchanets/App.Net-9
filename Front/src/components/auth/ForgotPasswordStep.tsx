@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { forgotPasswordFormSchema, type ForgotPasswordFormValues } from '../../validation/authSchemas'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface ForgotPasswordStepProps {
   onBack: () => void
@@ -12,6 +13,7 @@ type FormData = ForgotPasswordFormValues
 export function ForgotPasswordStep({ onBack, onSubmit }: ForgotPasswordStepProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const { t } = useTranslation()
 
   const {
     register,
@@ -42,14 +44,10 @@ export function ForgotPasswordStep({ onBack, onSubmit }: ForgotPasswordStepProps
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-text">Перевірте пошту</h2>
-          <p className="mt-2 text-sm text-text-muted">
-            Ми відправили інструкції з відновлення паролю на вашу електронну адресу.
-          </p>
+          <h2 className="text-2xl font-bold text-text">{t('forgot.success_title')}</h2>
+          <p className="mt-2 text-sm text-text-muted">{t('forgot.success_text')}</p>
         </div>
-        <button onClick={onBack} className="btn-primary w-full">
-          Повернутися до входу
-        </button>
+        <button onClick={onBack} className="btn-primary w-full">{t('forgot.back_to_login')}</button>
       </div>
     )
   }
@@ -57,26 +55,19 @@ export function ForgotPasswordStep({ onBack, onSubmit }: ForgotPasswordStepProps
   return (
     <div className="space-y-6">
       <div>
-        <button
-          onClick={onBack}
-          className="mb-4 flex items-center gap-1 text-sm text-text-muted hover:text-text"
-        >
+        <button onClick={onBack} className="mb-4 flex items-center gap-1 text-sm text-text-muted hover:text-text">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Назад
+          {t('auth.back')}
         </button>
-        <h2 className="text-2xl font-bold text-text">Відновлення паролю</h2>
-        <p className="mt-2 text-sm text-text-muted">
-          Введіть email та ми надішлемо інструкції для відновлення.
-        </p>
+        <h2 className="text-2xl font-bold text-text">{t('forgot.title')}</h2>
+        <p className="mt-2 text-sm text-text-muted">{t('forgot.instructions')}</p>
       </div>
 
   <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm text-text-muted">
-            Email
-          </label>
+          <label htmlFor="email" className="mb-1 block text-sm text-text-muted">{t('common.email')}</label>
           <input
             {...register('email')}
             id="email"
@@ -88,12 +79,8 @@ export function ForgotPasswordStep({ onBack, onSubmit }: ForgotPasswordStepProps
           {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn-primary w-full disabled:opacity-50"
-        >
-          {isLoading ? 'Надсилання...' : 'Надіслати'}
+        <button type="submit" disabled={isLoading} className="btn-primary w-full disabled:opacity-50">
+          {isLoading ? t('forgot.sending') : t('forgot.send')}
         </button>
       </form>
     </div>

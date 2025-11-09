@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { emailFormSchema, type EmailFormValues } from '../../validation/authSchemas'
+import { useTranslation } from 'react-i18next'
 
 interface EmailStepProps {
   onNext: (email: string) => void
@@ -12,6 +13,7 @@ interface EmailStepProps {
 type FormData = EmailFormValues
 
 export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }: EmailStepProps) {
+  const { t } = useTranslation()
   const {
     register,
     handleSubmit,
@@ -29,8 +31,8 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-text">Вхід або реєстрація</h2>
-        <p className="mt-2 text-sm text-text-muted">Введіть ваш email для продовження</p>
+        <h2 className="text-2xl font-bold text-text">{t('auth.email_step_heading')}</h2>
+        <p className="mt-2 text-sm text-text-muted">{t('auth.enter_email')}</p>
       </div>
 
       {/* Google Login */}
@@ -57,7 +59,7 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        Увійти через Google
+        {t('auth.sign_in_with_google')}
       </button>
 
       <div className="relative">
@@ -65,7 +67,7 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
           <div className="w-full border-t border-text/10"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-surface px-2 text-text-muted">або через email</span>
+          <span className="bg-surface px-2 text-text-muted">{t('auth.or_via_email')}</span>
         </div>
       </div>
 
@@ -85,24 +87,16 @@ export function EmailStep({ onNext, onForgotPassword, onGoogleLogin, isLoading }
           {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn-primary w-full disabled:opacity-50"
-        >
-          {isLoading ? 'Завантаження...' : 'Продовжити'}
+        <button type="submit" disabled={isLoading} className="btn-primary w-full disabled:opacity-50">
+          {isLoading ? t('auth.loading') : t('auth.continue')}
         </button>
 
         
       </form>
 
       <div className="text-center">
-        <button
-          type="button"
-          onClick={onForgotPassword}
-          className="text-sm text-brand hover:text-brand-light"
-        >
-          Забули пароль?
+        <button type="button" onClick={onForgotPassword} className="text-sm text-brand hover:text-brand-light">
+          {t('auth.forgot_password')}
         </button>
       </div>
     </div>
