@@ -24,7 +24,7 @@ export default function Cabinet() {
               <div className="mb-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-violet-200 dark:bg-violet-600 flex items-center justify-center text-sm font-semibold text-white">BM</div>
                 <div>
-                  <div className="text-sm font-medium">{user?.firstName + ' ' + user?.lastName || 'Користувач'}</div>
+                  <div className="text-sm font-medium">{(user?.firstName && user?.lastName) ? (user.firstName + ' ' + user.lastName) : t('common.user')}</div>
                   <div className="text-xs text-text-muted">{user?.email || ''}</div>
                 </div>
               </div>
