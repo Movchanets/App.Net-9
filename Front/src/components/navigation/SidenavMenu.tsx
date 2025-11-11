@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageSelector from './LanguageSelector'
-import type { User } from '../store/authStore'
-import { useAuthStore } from '../store/authStore'
+import LanguageSelector from '../ui/LanguageSelector'
+import type { User } from '../../store/authStore'
+import { useAuthStore } from '../../store/authStore'
 
 interface SidenavMenuProps {
   isOpen: boolean
@@ -18,7 +18,6 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
   const { t } = useTranslation()
-  // Keep mounted during close animation
   const [mounted, setMounted] = useState(isOpen)
   const [closing, setClosing] = useState(false)
 
@@ -34,7 +33,6 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
       }, 220)
       return () => clearTimeout(t)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   useEffect(() => {
@@ -53,8 +51,8 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
 
   if (!mounted) return null
 
-  const initials = user?.firstName
-    ? (user.firstName + ' ' + user.lastName)
+  const initials = user?.name
+    ? user.name
         .split(' ')
         .map((s) => s[0])
         .slice(0, 2)
@@ -66,20 +64,18 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* overlay with fade */}
       <div
         onClick={onClose}
         className={`absolute inset-0 bg-black/40 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* panel sliding in from right */}
       <aside
         className={`absolute right-0 top-0 h-full w-72 bg-surface-card p-4 shadow-xl transform transition-transform duration-200 flex flex-col ${
           isVisible ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="mb-6 flex items-center gap-3">
-            <div className="h-12 w-12 shrink-0 rounded-full bg-surface/80 flex items-center justify-center text-lg font-semibold">
+          <div className="h-12 w-12 shrink-0 rounded-full bg-surface/80 flex items-center justify-center text-lg font-semibold">
               {(() => {
                 const img = user?.picture
                 return img ? (
@@ -95,7 +91,7 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
           </div>
         </div>
 
-  <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-1">
           <NavLink to="/cabinet/orders" className={linkClass} onClick={onClose}>
             <span>📦</span>
             {t('menu.orders')}
@@ -116,17 +112,11 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
             {t('menu.wallet')}
           </NavLink>
 
-          {/* <NavLink to="/discounts" className={linkClass} onClick={onClose}>
-            <span>🏷️</span>
-            Знижки та бонуси
-          </NavLink> */}
-
           <NavLink to="/cabinet/user/settings?tab=profile" className={linkClass} onClick={onClose}>
             <span>⚙️</span>
             {t('menu.settings')}
           </NavLink>
 
-          {/* quick shortcut into specific settings tab */}
           <NavLink to="/cabinet/user/settings?tab=security" className={linkClass} onClick={onClose}>
             <span>🔒</span>
             {t('menu.security')}
@@ -143,12 +133,10 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
           </NavLink>
         </nav>
 
-        {/* language selector */}
         <div className="mt-4">
           <LanguageSelector className="mb-3" />
         </div>
 
-        {/* logout button placed inside the aside so it's reachable */}
         <div className="mt-auto">
           <button
             onClick={() => setConfirmOpen(true)}
@@ -158,7 +146,7 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
           </button>
         </div>
       </aside>
-  {/* Confirm logout modal */}
+
       {confirmOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setConfirmOpen(false)} />

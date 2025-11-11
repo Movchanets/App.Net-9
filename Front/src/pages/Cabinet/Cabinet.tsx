@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageSelector from '../../components/LanguageSelector'
+import LanguageSelector from '../../components/ui/LanguageSelector'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 text-sm rounded-md transition-colors ${

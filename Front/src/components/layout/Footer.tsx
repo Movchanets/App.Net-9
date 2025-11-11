@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import LanguageSelector from './LanguageSelector'
+import LanguageSelector from '../ui/LanguageSelector'
 
 export function Footer() {
   const { t } = useTranslation()
@@ -23,5 +23,3 @@ export function Footer() {
     </footer>
   )
 }
-
-

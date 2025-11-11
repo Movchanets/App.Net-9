@@ -7,14 +7,12 @@ export default function About() {
     <div className="prose prose-invert max-w-none">
       <h1>{t('site.about.title')}</h1>
       <p>{t('site.about.description')}</p>
-      <h2>Наші принципи</h2>
+      <h2>{t('site.principles_title')}</h2>
       <ul>
-        <li>Якість і прозорість цін.</li>
-        <li>Швидка доставка і зручний сервіс.</li>
+        <li>{t('site.principle1')}</li>
+        <li>{t('site.principle2')}</li>
         <li>{t('support.tagline')}</li>
       </ul>
     </div>
   )
 }
-
-

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EmailStep } from './auth/EmailStep'
-import { LoginStep } from './auth/LoginStep'
-import { RegisterStep } from './auth/RegisterStep'
-import { ForgotPasswordStep } from './auth/ForgotPasswordStep'
-import { authApi } from '../api/authApi'
-import TurnstileWidget from './TurnstileWidget'
-import { useAuthStore } from '../store/authStore'
+import { EmailStep } from './EmailStep'
+import { LoginStep } from './LoginStep'
+import { RegisterStep } from './RegisterStep'
+import { ForgotPasswordStep } from './ForgotPasswordStep'
+import { authApi } from '../../api/authApi'
+import TurnstileWidget from '../ui/TurnstileWidget'
+import { useAuthStore } from '../../store/authStore'
 
 type Step = 'email' | 'login' | 'register' | 'forgot'
 
@@ -46,8 +46,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-  const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
-      // result is TokenResponse { accessToken, refreshToken }
+      const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
@@ -62,7 +61,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-  const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
+      const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
@@ -75,12 +74,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handleGoogleLogin = async () => {
     setError(null)
     try {
-  // TODO: Integrate real Google OAuth
-  alert(t('auth.google_oauth_notice'))
-      // const token = 'google-oauth-token'
-      // const result = await authApi.googleLogin(token)
-      // setAuth(result.token, result.user)
-      // onClose()
+      // TODO: Integrate real Google OAuth
+      alert(t('auth.google_oauth_notice'))
     } catch {
       setError(t('auth.google_error'))
     }
@@ -158,3 +153,5 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     </div>
   )
 }
+
+export default AuthModal
