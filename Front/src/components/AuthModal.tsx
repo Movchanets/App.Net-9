@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { EmailStep } from './auth/EmailStep'
 import { LoginStep } from './auth/LoginStep'
 import { RegisterStep } from './auth/RegisterStep'
@@ -21,6 +22,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const setAuth = useAuthStore((state) => state.setAuth)
+  const { t } = useTranslation()
 
   if (!isOpen) return null
 
@@ -33,7 +35,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const result = await authApi.checkEmail(enteredEmail, turnstileToken ?? undefined)
       setStep(result.exists ? 'login' : 'register')
     } catch {
-      setError("Помилка з'єднання з сервером")
+      setError(t('validation.server_error'))
     } finally {
       setIsLoading(false)
     }
@@ -49,7 +51,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
-      setError('Невірний пароль')
+      setError(t('auth.invalid_password'))
     } finally {
       setIsLoading(false)
     }
@@ -64,7 +66,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
-      setError('Помилка реєстрації')
+      setError(t('auth.register_error'))
     } finally {
       setIsLoading(false)
     }
@@ -73,14 +75,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handleGoogleLogin = async () => {
     setError(null)
     try {
-      // TODO: Integrate real Google OAuth
-      alert('Google OAuth буде реалізовано на бекенді')
+  // TODO: Integrate real Google OAuth
+  alert(t('auth.google_oauth_notice'))
       // const token = 'google-oauth-token'
       // const result = await authApi.googleLogin(token)
       // setAuth(result.token, result.user)
       // onClose()
     } catch {
-      setError('Помилка входу через Google')
+      setError(t('auth.google_error'))
     }
   }
 
@@ -141,7 +143,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             await authApi.requestPasswordReset({ email, turnstileToken: turnstileToken ?? undefined })
             setStep('email')
           } catch {
-            setError('Помилка відновлення паролю')
+            setError(t('auth.reset_error'))
           } finally {
             setIsLoading(false)
           }

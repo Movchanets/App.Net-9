@@ -81,6 +81,21 @@
     "forgot_password": "Забули пароль?",
     "sign_in_with_google": "Увійти через Google",
     "or_via_email": "або через email"
+    ,
+    "invalid_password": "Невірний пароль",
+    "register_error": "Помилка реєстрації",
+    "google_error": "Помилка входу через Google",
+    "google_oauth_notice": "Google OAuth буде реалізовано на бекенді",
+    "reset_error": "Помилка відновлення паролю"
+  },
+
+  "validation": {
+    "required": "Обов'язкове поле",
+    "email": "Невірний формат email",
+    "min_6": "Мінімум 6 символів",
+    "min_2": "Мінімум 2 символи",
+    "passwords_must_match": "Паролі не співпадають",
+    "server_error": "Помилка з'єднання з сервером"
   },
 
   "reset": {
@@ -136,6 +151,7 @@
   },
 
   "common": {
-    "email": "E-mail"
+    "email": "E-mail",
+    "empty": "порожньо"
   }
 }

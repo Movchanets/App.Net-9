@@ -81,6 +81,21 @@
     "forgot_password": "Forgot password?",
     "sign_in_with_google": "Sign in with Google",
     "or_via_email": "or via email"
+    ,
+    "invalid_password": "Invalid password",
+    "register_error": "Registration failed",
+    "google_error": "Google sign-in failed",
+    "google_oauth_notice": "Google OAuth will be implemented on the backend",
+    "reset_error": "Password recovery failed"
+  },
+
+  "validation": {
+    "required": "Required field",
+    "email": "Invalid email format",
+    "min_6": "Minimum 6 characters",
+    "min_2": "Minimum 2 characters",
+    "passwords_must_match": "Passwords do not match",
+    "server_error": "Failed to connect to server"
   },
 
   "reset": {
@@ -136,6 +151,7 @@
   },
 
   "common": {
-    "email": "E-mail"
+    "email": "E-mail",
+    "empty": "empty"
   }
 }
