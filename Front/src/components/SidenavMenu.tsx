@@ -53,8 +53,8 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
 
   if (!mounted) return null
 
-  const initials = user?.name
-    ? user.name
+  const initials = user?.firstName
+    ? (user.firstName + ' ' + user.lastName)
         .split(' ')
         .map((s) => s[0])
         .slice(0, 2)
@@ -79,19 +79,18 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
         }`}
       >
         <div className="mb-6 flex items-center gap-3">
-          <div className="h-12 w-12 shrink-0 rounded-full bg-surface/80 flex items-center justify-center text-lg font-semibold">
-            {(() => {
-              type UserWithImg = User & { img?: string }
-              const u = user as UserWithImg | undefined
-              return u && u.img ? (
-                <img src={u.img} alt="avatar" className="h-12 w-12 rounded-full object-cover" />
-              ) : (
-                <span className="text-text">{initials}</span>
-              )
-            })()}
-          </div>
+            <div className="h-12 w-12 shrink-0 rounded-full bg-surface/80 flex items-center justify-center text-lg font-semibold">
+              {(() => {
+                const img = user?.picture
+                return img ? (
+                  <img src={img} alt={user?.name ?? 'avatar'} className="h-12 w-12 rounded-full object-cover" />
+                ) : (
+                  <span className="text-text">{initials}</span>
+                )
+              })()}
+            </div>
           <div>
-            <div className="text-sm font-medium text-text">{user?.name || 'Користувач'}</div>
+            <div className="text-sm font-medium text-text">{user?.firstName + ' ' + user?.lastName || 'Користувач'}</div>
             <div className="text-xs text-text-muted">{user?.email || ''}</div>
           </div>
         </div>

@@ -1,9 +1,15 @@
 import { create } from 'zustand'
+import { parseJwt, toArray } from '../utils/jwt'
 
 export interface User {
   id: string
   email: string
   name: string
+  firstName?: string
+  lastName?: string
+  picture?: string
+  roles?: string[]
+  permissions?: string[]
 }
 
 interface AuthState {
@@ -15,56 +21,84 @@ interface AuthState {
   logout: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: localStorage.getItem('accessToken') || localStorage.getItem('token'),
-  refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!(localStorage.getItem('accessToken') || localStorage.getItem('token')),
+export const useAuthStore = create<AuthState>((set) => {
+  // read stored tokens once at initialization
+  const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('token')
+  const storedRefresh = localStorage.getItem('refreshToken')
+
+  const claims = storedToken ? parseJwt(storedToken) : null
+  const c = claims as Record<string, unknown> | null
+
+  const initialUser = c
+    ? {
+        id: String(
+          c['sub'] ||
+            c['nameid'] ||
+            c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+            c['id'] ||
+            ''
+        ),
+        email: String(c['email'] || ''),
+        name: String(c['name'] || c['preferred_username'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || ''),
+        firstName: c['given_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'] ? String(c['given_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) : undefined,
+        lastName: c['family_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'] ? String(c['family_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname']) : undefined,
+        picture: c['picture'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto'] ? String(c['picture'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto']) : undefined,
+        roles: toArray(c['role'] || c['roles'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']),
+        permissions: toArray(c['permission'] || c['permissions'])
+      }
+    : null
+
+  return {
+    user: initialUser,
+    token: storedToken,
+    refreshToken: storedRefresh,
+    isAuthenticated: !!storedToken,
   
-  // Parse JWT and create a small user stub from claims
-  setAuth: (accessToken, refreshToken) => {
-    try {
-      // store tokens
-      if (accessToken) {
-        localStorage.setItem('accessToken', accessToken)
-        
-      }
-      if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken)
-      }
-
-      // simple JWT payload parsing (no external deps)
-      const parseJwt = (token: string) => {
-        try {
-          const payload = token.split('.')[1]
-          const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-          return JSON.parse(decoded)
-        } catch {
-          return null
+    // Parse JWT and create a small user stub from claims
+    setAuth: (accessToken, refreshToken) => {
+      try {
+        // store tokens
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken)
         }
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken)
+        }
+
+        const claims = accessToken ? parseJwt(accessToken) : null
+        const c2 = claims as Record<string, unknown> | null
+        const user = c2
+          ? {
+              id: String(
+                c2['sub'] ||
+                  c2['nameid'] ||
+                  c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+                  c2['id'] ||
+                  ''
+              ),
+              email: String(c2['email'] || ''),
+              name: String(c2['name'] || c2['preferred_username'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || ''),
+              firstName: c2['given_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'] ? String(c2['given_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) : undefined,
+              lastName: c2['family_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'] ? String(c2['family_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname']) : undefined,
+              picture: c2['picture'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto'] ? String(c2['picture'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto']) : undefined,
+              roles: toArray(c2['role'] || c2['roles'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']),
+              permissions: toArray(c2['permission'] || c2['permissions'])
+            }
+          : null
+
+        set({ token: accessToken, refreshToken: refreshToken || null, user, isAuthenticated: !!accessToken })
+      } catch {
+        // on parse error still set token
+        localStorage.setItem('accessToken', accessToken)
+        set({ token: accessToken, refreshToken: refreshToken || null, user: null, isAuthenticated: !!accessToken })
       }
-
-      const claims = accessToken ? parseJwt(accessToken) : null
-      const user = claims
-        ? {
-            id: claims.sub || claims.nameid || claims['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || claims.id || '',
-            email: claims.email || '',
-            name: claims.name || claims.given_name || claims.preferred_username || ''
-          }
-        : null
-
-      set({ token: accessToken, refreshToken: refreshToken || null, user, isAuthenticated: !!accessToken })
-    } catch {
-      // on parse error still set token
-      localStorage.setItem('accessToken', accessToken)
-      set({ token: accessToken, refreshToken: refreshToken || null, user: null, isAuthenticated: !!accessToken })
-    }
-  },
+    },
   
   logout: () => {
    
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     set({ token: null, refreshToken: null, user: null, isAuthenticated: false })
-  },
-}))
+  }
+  }
+});

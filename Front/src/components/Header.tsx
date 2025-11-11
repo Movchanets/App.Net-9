@@ -43,7 +43,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-text">{t('greeting', { name: user?.name || '' })}</span>
+                <span className="text-sm text-text">{t('greeting', { name: user?.firstName || '' })}</span>
                 {/* If we are in cabinet, hide header buttons except cart */}
                 {!inCabinet && (
                   <>
@@ -57,14 +57,13 @@ export function Header() {
                     >
                       <span className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-surface-card text-sm font-medium ring-1 ring-white/10">
                         {(() => {
-                          type UserWithImg = User & { img?: string }
-                          const u = user as UserWithImg | null
-                          return u && u.img ? (
-                            <img src={u.img} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
+                          const img = user?.picture
+                          return img ? (
+                            <img src={img} alt={user?.firstName ?? 'avatar'} className="h-9 w-9 rounded-full object-cover" />
                           ) : (
                             <span className="text-sm text-text">
-                              {user?.name
-                                ? user.name
+                              {user?.firstName 
+                                ? (user.firstName + ' ' + user.lastName)
                                     .split(' ')
                                     .map((s) => s[0])
                                     .slice(0, 2)
