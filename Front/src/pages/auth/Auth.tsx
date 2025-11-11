@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { EmailStep } from '../components/auth/EmailStep'
-import { LoginStep } from '../components/auth/LoginStep'
-import { RegisterStep } from '../components/auth/RegisterStep'
-import { ForgotPasswordStep } from '../components/auth/ForgotPasswordStep'
-import { authApi } from '../api/authApi'
-import TurnstileWidget from '../components/TurnstileWidget'
-import { useAuthStore } from '../store/authStore'
+import { useTranslation } from 'react-i18next'
+import { EmailStep } from '../../components/auth/EmailStep'
+import { LoginStep } from '../../components/auth/LoginStep'
+import { RegisterStep } from '../../components/auth/RegisterStep'
+import { ForgotPasswordStep } from '../../components/auth/ForgotPasswordStep'
+import { authApi } from '../../api/authApi'
+import TurnstileWidget from '../../components/ui/TurnstileWidget'
+import { useAuthStore } from '../../store/authStore'
 
 type Step = 'email' | 'login' | 'register' | 'forgot'
 
@@ -15,6 +16,7 @@ export default function Auth() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
   const setAuth = useAuthStore((state) => state.setAuth)
   const navigate = useNavigate()
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
@@ -28,7 +30,7 @@ export default function Auth() {
       const result = await authApi.checkEmail(enteredEmail, turnstileToken ?? undefined)
       setStep(result.exists ? 'login' : 'register')
     } catch {
-      setError("Помилка з'єднання з сервером")
+      setError(t('validation.server_error'))
     } finally {
       setIsLoading(false)
     }
@@ -43,7 +45,7 @@ export default function Auth() {
       setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
-      setError('Невірний пароль')
+      setError(t('auth.invalid_password'))
     } finally {
       setIsLoading(false)
     }
@@ -58,7 +60,7 @@ export default function Auth() {
       setAuth(result.accessToken, result.refreshToken)
       navigate('/')
     } catch {
-      setError('Помилка реєстрації')
+      setError(t('auth.register_error'))
     } finally {
       setIsLoading(false)
     }
@@ -67,9 +69,9 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     setError(null)
     try {
-      alert('Google OAuth буде реалізовано на бекенді')
+      alert(t('auth.google_oauth_notice'))
     } catch {
-      setError('Помилка входу через Google')
+      setError(t('auth.google_error'))
     }
   }
 
@@ -86,7 +88,7 @@ export default function Auth() {
       await authApi.requestPasswordReset({ email: emailToReset, turnstileToken: turnstileToken ?? undefined })
       setStep('email')
     } catch {
-      setError('Помилка відновлення паролю')
+      setError(t('auth.reset_error'))
     } finally {
       setIsLoading(false)
     }

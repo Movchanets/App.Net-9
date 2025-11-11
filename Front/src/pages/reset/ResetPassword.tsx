@@ -2,19 +2,21 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { authApi } from '../api/authApi'
+import { authApi } from '../../api/authApi'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-const schema = yup.object({
-  newPassword: yup.string().min(6).required('Обов\'язкове поле'),
-  confirmPassword: yup.string().oneOf([yup.ref('newPassword')], 'Паролі не співпадають').required('Обов\'язкове поле'),
-})
-
-type FormData = yup.InferType<typeof schema>
+type FormData = {
+  newPassword: string
+  confirmPassword: string
+}
 
 export default function ResetPassword() {
   const { t } = useTranslation()
+  const schema = yup.object({
+    newPassword: yup.string().min(6).required(t('validation.required')),
+    confirmPassword: yup.string().oneOf([yup.ref('newPassword')], t('validation.passwords_mismatch')).required(t('validation.required')),
+  })
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const email = searchParams.get('email') ?? ''
@@ -29,7 +31,7 @@ export default function ResetPassword() {
       setSuccess(true)
     } catch (err) {
       console.error(err)
-      alert('Не вдалося скинути пароль')
+      alert(t('reset.reset_failed'))
     }
   }
 
@@ -65,10 +67,10 @@ export default function ResetPassword() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-text mt-4">Пароль успішно змінено</h2>
-            <p className="mt-2 text-sm text-text-muted">Тепер ви можете увійти з новим паролем.</p>
+            <h2 className="text-2xl font-bold text-text mt-4">{t('reset.success_title')}</h2>
+            <p className="mt-2 text-sm text-text-muted">{t('reset.success_text')}</p>
             <div className="mt-6">
-              <button onClick={() => navigate('/auth')} className="btn-primary w-full">Повернутися до входу</button>
+              <button onClick={() => navigate('/auth')} className="btn-primary w-full">{t('reset.back_to_login')}</button>
             </div>
           </div>
         )}

@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { EmailStep } from './auth/EmailStep'
-import { LoginStep } from './auth/LoginStep'
-import { RegisterStep } from './auth/RegisterStep'
-import { ForgotPasswordStep } from './auth/ForgotPasswordStep'
-import { authApi } from '../api/authApi'
-import TurnstileWidget from './TurnstileWidget'
-import { useAuthStore } from '../store/authStore'
+import { useTranslation } from 'react-i18next'
+import { EmailStep } from './EmailStep'
+import { LoginStep } from './LoginStep'
+import { RegisterStep } from './RegisterStep'
+import { ForgotPasswordStep } from './ForgotPasswordStep'
+import { authApi } from '../../api/authApi'
+import TurnstileWidget from '../ui/TurnstileWidget'
+import { useAuthStore } from '../../store/authStore'
 
 type Step = 'email' | 'login' | 'register' | 'forgot'
 
@@ -21,6 +22,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const setAuth = useAuthStore((state) => state.setAuth)
+  const { t } = useTranslation()
 
   if (!isOpen) return null
 
@@ -33,7 +35,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const result = await authApi.checkEmail(enteredEmail, turnstileToken ?? undefined)
       setStep(result.exists ? 'login' : 'register')
     } catch {
-      setError("Помилка з'єднання з сервером")
+      setError(t('validation.server_error'))
     } finally {
       setIsLoading(false)
     }
@@ -44,12 +46,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-  const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
-      // result is TokenResponse { accessToken, refreshToken }
+      const result = await authApi.login({ email, password, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
-      setError('Невірний пароль')
+      setError(t('auth.invalid_password'))
     } finally {
       setIsLoading(false)
     }
@@ -60,11 +61,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
 
     try {
-  const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
+      const result = await authApi.register({ email, name, surname, password, confirmPassword, turnstileToken: turnstileToken ?? undefined })
       setAuth(result.accessToken, result.refreshToken)
       onClose()
     } catch {
-      setError('Помилка реєстрації')
+      setError(t('auth.register_error'))
     } finally {
       setIsLoading(false)
     }
@@ -74,13 +75,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setError(null)
     try {
       // TODO: Integrate real Google OAuth
-      alert('Google OAuth буде реалізовано на бекенді')
-      // const token = 'google-oauth-token'
-      // const result = await authApi.googleLogin(token)
-      // setAuth(result.token, result.user)
-      // onClose()
+      alert(t('auth.google_oauth_notice'))
     } catch {
-      setError('Помилка входу через Google')
+      setError(t('auth.google_error'))
     }
   }
 
@@ -141,7 +138,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             await authApi.requestPasswordReset({ email, turnstileToken: turnstileToken ?? undefined })
             setStep('email')
           } catch {
-            setError('Помилка відновлення паролю')
+            setError(t('auth.reset_error'))
           } finally {
             setIsLoading(false)
           }
@@ -156,3 +153,5 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     </div>
   )
 }
+
+export default AuthModal

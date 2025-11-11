@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageSelector from '../../components/LanguageSelector'
+import LanguageSelector from '../../components/ui/LanguageSelector'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 px-4 py-3 text-sm rounded-md transition-colors ${
@@ -24,7 +24,7 @@ export default function Cabinet() {
               <div className="mb-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-violet-200 dark:bg-violet-600 flex items-center justify-center text-sm font-semibold text-white">BM</div>
                 <div>
-                  <div className="text-sm font-medium">{user?.name || 'Користувач'}</div>
+                  <div className="text-sm font-medium">{(user?.firstName && user?.lastName) ? (user.firstName + ' ' + user.lastName) : t('common.user')}</div>
                   <div className="text-xs text-text-muted">{user?.email || ''}</div>
                 </div>
               </div>

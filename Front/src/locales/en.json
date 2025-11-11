@@ -80,7 +80,22 @@
     "loading": "Loading...",
     "forgot_password": "Forgot password?",
     "sign_in_with_google": "Sign in with Google",
-    "or_via_email": "or via email"
+    "or_via_email": "or via email",
+    "invalid_password": "Invalid password",
+    "register_error": "Registration failed",
+    "google_error": "Google sign-in failed",
+    "google_oauth_notice": "Google OAuth will be implemented on the backend",
+    "reset_error": "Password recovery failed"
+  },
+
+  "validation": {
+    "required": "Required field",
+    "email": "Invalid email format",
+    "min_6": "Minimum 6 characters",
+    "min_2": "Minimum 2 characters",
+    "passwords_must_match": "Passwords do not match",
+    "passwords_mismatch": "Passwords do not match",
+    "server_error": "Failed to connect to server"
   },
 
   "reset": {
@@ -92,7 +107,8 @@
     "save": "Save new password",
     "success_title": "Password changed successfully",
     "success_text": "You can now sign in with your new password.",
-    "back_to_login": "Return to sign in"
+    "back_to_login": "Return to sign in",
+    "reset_failed": "Failed to reset password"
   },
 
   "forgot": {
@@ -113,6 +129,9 @@
       "title": "About",
       "description": "ShopNine is a modern online store combining stylish design, convenience and reliability. We carefully select products and work only with trusted suppliers."
     },
+      "principles_title": "Our principles",
+      "principle1": "Quality and transparent pricing.",
+      "principle2": "Fast delivery and convenient service.",
     "home": {
       "tagline": "Discover a curated selection of quality products at fair prices. Fast delivery, secure payment and 24/7 support."
     }
@@ -124,9 +143,17 @@
   },
 
   "contact": {
+    "title": "Contacts",
+    "description": "We're always available. Write to us!",
     "email": "E-mail: support@shopnine.com",
     "phone": "Phone: +380 (00) 123-45-67",
-    "hours": "Hours: Mon-Fri, 9:00 — 18:00"
+    "hours": "Hours: Mon-Fri, 9:00 — 18:00",
+    "form": {
+      "name_label": "Name",
+      "email_label": "E-mail",
+      "message_label": "Message",
+      "send": "Send"
+    }
   },
   "footer": {
     "copy": "© {{year}} ShopNine. All rights reserved.",
@@ -136,6 +163,7 @@
   },
 
   "common": {
-    "email": "E-mail"
+    "email": "E-mail",
+    "empty": "empty"
   }
 }

@@ -1,34 +1,36 @@
+import { useTranslation } from 'react-i18next'
+
 export default function Contacts() {
+  const { t } = useTranslation()
+
   return (
     <div className="grid gap-8 md:grid-cols-2">
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold text-text">Контакти</h1>
-        <p className="text-text-muted">Ми завжди на звʼязку. Напишіть нам!</p>
+        <h1 className="text-2xl font-semibold text-text">{t('contact.title')}</h1>
+        <p className="text-text-muted">{t('contact.description')}</p>
 
         <div className="space-y-2 text-sm text-text-muted">
-          <p>E-mail: support@shopnine.com</p>
-          <p>Телефон: +380 (00) 123-45-67</p>
-          <p>Графік: Пн-Пт, 9:00 — 18:00</p>
+          <p>{t('contact.email')}</p>
+          <p>{t('contact.phone')}</p>
+          <p>{t('contact.hours')}</p>
         </div>
       </div>
 
       <form className="card space-y-4">
         <div>
-          <label className="mb-1 block text-sm text-text-muted">Імʼя</label>
+          <label className="mb-1 block text-sm text-text-muted">{t('contact.form.name_label')}</label>
           <input className="w-full rounded-md border border-text/20 bg-transparent px-3 py-2 text-text outline-none focus:border-brand" />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-text-muted">E-mail</label>
+          <label className="mb-1 block text-sm text-text-muted">{t('contact.form.email_label')}</label>
           <input type="email" className="w-full rounded-md border border-text/20 bg-transparent px-3 py-2 text-text outline-none focus:border-brand" />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-text-muted">Повідомлення</label>
+          <label className="mb-1 block text-sm text-text-muted">{t('contact.form.message_label')}</label>
           <textarea rows={5} className="w-full rounded-md border border-text/20 bg-transparent px-3 py-2 text-text outline-none focus:border-brand" />
         </div>
-        <button className="btn-primary w-full md:w-auto">Надіслати</button>
+        <button className="btn-primary w-full md:w-auto">{t('contact.form.send')}</button>
       </form>
     </div>
   )
 }
-
-

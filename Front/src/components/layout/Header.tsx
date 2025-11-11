@@ -1,10 +1,10 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AuthModal } from './AuthModal'
-import type { User } from '../store/authStore'
-import { useAuthStore } from '../store/authStore'
-import SidenavMenu from './SidenavMenu'
+import { AuthModal } from '../auth/AuthModal'
+import type { User } from '../../store/authStore'
+import { useAuthStore } from '../../store/authStore'
+import SidenavMenu from '../navigation/SidenavMenu'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -43,11 +43,9 @@ export function Header() {
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-text">{t('greeting', { name: user?.name || '' })}</span>
-                {/* If we are in cabinet, hide header buttons except cart */}
+                <span className="text-sm text-text">{t('greeting', { name: user?.firstName || '' })}</span>
                 {!inCabinet && (
                   <>
-                    {/* Avatar + 'Cabinet' as a single button (opens sidenav) */}
                     <button
                       type="button"
                       onClick={() => setIsSidenavOpen(true)}
@@ -57,10 +55,9 @@ export function Header() {
                     >
                       <span className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-surface-card text-sm font-medium ring-1 ring-white/10">
                         {(() => {
-                          type UserWithImg = User & { img?: string }
-                          const u = user as UserWithImg | null
-                          return u && u.img ? (
-                            <img src={u.img} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
+                          const img = user?.picture
+                          return img ? (
+                            <img src={img} alt={user?.name ?? 'avatar'} className="h-9 w-9 rounded-full object-cover" />
                           ) : (
                             <span className="text-sm text-text">
                               {user?.name
@@ -81,7 +78,6 @@ export function Header() {
                       </span>
                     </button>
 
-                    {/* Favorites with label - whole block clickable */}
                     <Link
                       to="/cabinet/favorites"
                       className="relative group inline-flex flex-col items-center no-underline px-1 py-0.5 rounded-md hover:bg-surface-card"
@@ -95,7 +91,6 @@ export function Header() {
                   </>
                 )}
 
-                {/* Cart with label - always visible even inside cabinet */}
                 <Link
                   to="/cart"
                   className="relative group inline-flex flex-col items-center no-underline px-1 py-0.5 rounded-md hover:bg-surface-card"
@@ -122,5 +117,3 @@ export function Header() {
     </>
   )
 }
-
-
