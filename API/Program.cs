@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using API.Authorization;
 using Scalar.AspNetCore;
 using Serilog;
 using API.Filters;
@@ -127,6 +129,9 @@ try
     // JWT Authentication
     builder.Services.AddScoped<ITokenService, TokenService>();
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
+    // Permission-based dynamic policies (policies like "Permission:users.read")
+    builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+    builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
     // Email sender (SMTP) - reads SmtpSettings from configuration
     // Registered as singleton so hosted background service can consume it safely.
     builder.Services.AddSingleton<Application.Interfaces.IEmailService, SmtpEmailService>();

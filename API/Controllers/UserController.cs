@@ -138,6 +138,7 @@ public class UsersController : ControllerBase
     /// Отримання користувача за ID
     /// </summary>
     [HttpGet("{id}")]
+    [Authorize(Policy = "Permission:users.read")]
     public async Task<IActionResult> GetUser(long id)
     {
         var result = await _mediator.Send(new GetUserQuery(id));
@@ -149,6 +150,7 @@ public class UsersController : ControllerBase
     /// Отримання всіх користувачів
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = "Permission:users.read")]
     public async Task<IActionResult> GetUsers()
     {
         var result = await _mediator.Send(new GetUsersQuery());
