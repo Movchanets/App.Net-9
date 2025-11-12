@@ -29,8 +29,10 @@ public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceRespo
 
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded)
-			return new ServiceResponse<UserDto>(false, "Failed to update user");
-
+		{
+			var errorMessages = string.Join("; ", result.Errors.Select(e => e.Description));
+			return new ServiceResponse<UserDto>(false, $"Failed to update user: {errorMessages}");
+		}
 		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 
 		var dto = new UserDto(user.UserName ?? string.Empty, user.Name ?? string.Empty, user.Surname ?? string.Empty, user.Email ?? string.Empty, user.PhoneNumber ?? string.Empty, roles);
