@@ -2,6 +2,9 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import ProfileForm from '../../components/Cabinet/ProfileForm'
+import ChangePasswordForm from '../../components/Cabinet/ChangePasswordForm'
+
 export default function SettingsPage() {
   const { t } = useTranslation()
   const tabs: { id: string; label: string }[] = [
@@ -43,7 +46,7 @@ export default function SettingsPage() {
               onClick={() => onSelect(t.id)}
               className={`px-4 py-2 text-sm rounded-t-md border-b-2 transition-colors ${
                 active === t.id
-                  ? 'border-brand text-brand bg-surface dark:bg-surface/5' 
+                  ? 'border-brand text-brand bg-surface dark:bg-surface/5'
                   : 'border-transparent text-text-muted dark:text-text-muted/80 hover:text-text dark:hover:text-white'
               }`}
               aria-current={active === t.id ? 'page' : undefined}
@@ -59,6 +62,9 @@ export default function SettingsPage() {
           <section>
             <h2 className="text-lg font-medium mb-2 text-text dark:text-white">{t('settings.profile.title')}</h2>
             <p className="text-sm text-text-muted dark:text-text-muted/80">{t('settings.profile.description')}</p>
+            <div className="mt-4">
+              <ProfileForm />
+            </div>
           </section>
         )}
 
@@ -66,6 +72,9 @@ export default function SettingsPage() {
           <section>
             <h2 className="text-lg font-medium mb-2">{t('settings.security.title')}</h2>
             <p className="text-sm text-text-muted">{t('settings.security.description')}</p>
+            <div className="mt-4">
+              <ChangePasswordForm />
+            </div>
           </section>
         )}
 

@@ -8,5 +8,6 @@ public record UserDto(
     string Name,
     string Surname,
     string Email,
+    string PhoneNumber,
     List<string> Roles
 );

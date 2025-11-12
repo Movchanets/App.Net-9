@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { authApi } from '../api/authApi';
-import type { User } from '../types/user';
+import { userApi } from '../api/userApi';
+import type { User } from '../api/userApi';
 
 interface AdminPageStore {
   users: User[];
@@ -19,10 +19,11 @@ export const useAdminPageStore = create<AdminPageStore>((set) => ({
   fetchUsers: async () => {
     try {
       set({ loading: true, error: null });
-      const res = await authApi.getUsers();
-      set({ users: res.payload ?? res.data?.payload ?? [], loading: false });
-    } catch (err: any) {
-      set({ error: err.message, loading: false });
+      const res = await userApi.getUsers();
+      set({ users: res ?? [], loading: false });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      set({ error: message, loading: false })
     }
   },
 
@@ -30,9 +31,9 @@ export const useAdminPageStore = create<AdminPageStore>((set) => ({
 
   fetchUserByEmail: async (email: string) => {
     try {
-      const res = await authApi.getUserByEmail(email);
-      return res.payload ?? res.data?.payload ?? null;
-    } catch (err: any) {
+      const res = await userApi.getUserByEmail(email);
+      return res ?? null;
+    } catch {
       return null;
     }
   },

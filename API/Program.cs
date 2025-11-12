@@ -68,13 +68,12 @@ try
                 };
 
                 // робимо глобальною вимогу токена для всіх методів
-                document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                var item = new OpenApiSecurityRequirement();
+                item[new OpenApiSecurityScheme
                 {
-                    [new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                    }] = new List<string>()
-                });
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                }] = new List<string>();
+                document.SecurityRequirements.Add(item);
 
                 return Task.CompletedTask;
             });
@@ -149,17 +148,15 @@ try
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!))
-        };
+        options.TokenValidationParameters = new TokenValidationParameters();
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidateLifetime = true;
+        options.TokenValidationParameters.ValidateIssuerSigningKey = true;
+        options.TokenValidationParameters.ValidIssuer = builder.Configuration["JwtSettings:Issuer"];
+        options.TokenValidationParameters.ValidAudience = builder.Configuration["JwtSettings:Audience"];
+        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!));
     });
 
     var app = builder.Build();
@@ -177,10 +174,8 @@ try
             options.Layout = ScalarLayout.Modern;
             options.ShowSidebar = true;
 
-            options.Authentication = new ScalarAuthenticationOptions
-            {
-                PreferredSecurityScheme = "Bearer"
-            };
+            options.Authentication = new ScalarAuthenticationOptions();
+            options.Authentication.PreferredSecurityScheme = "Bearer";
         });
     }
     app.UseAuthentication();
