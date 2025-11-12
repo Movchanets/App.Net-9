@@ -49,17 +49,34 @@
       "payments": "Payments"
     },
     "return_to_cabinet": "Back to cabinet",
+    "saving": "Saving...",
     "notifications": {
       "title": "Notifications",
       "description": "Email & push notification settings."
     },
     "profile": {
       "title": "Profile information",
-      "description": "Change your name, email and profile photo here."
+      "description": "Change your name, email and profile photo here.",
+      "email": "E-mail",
+      "name": "First name",
+      "surname": "Last name",
+      "username": "Username",
+      "phone": "Phone",
+      "save": "Save",
+      "save_success": "Profile updated"
     },
     "security": {
       "title": "Security",
-      "description": "Change password or enable two-factor authentication."
+      "description": "Change password or enable two-factor authentication.",
+      "current_password": "Current password",
+      "new_password": "New password",
+      "confirm_password": "Confirm password",
+      "change_password": "Change password",
+      "change_success": "Password changed successfully",
+      "errors": {
+        "fill_all": "Please fill in all required fields",
+        "password_mismatch": "New password and confirmation do not match"
+      }
     },
     "payments": {
       "title": "Payments",
@@ -95,7 +112,8 @@
     "min_2": "Minimum 2 characters",
     "passwords_must_match": "Passwords do not match",
     "passwords_mismatch": "Passwords do not match",
-    "server_error": "Failed to connect to server"
+    "server_error": "Failed to connect to server",
+    "phone": "Invalid phone number"
   },
 
   "reset": {

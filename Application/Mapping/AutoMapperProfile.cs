@@ -21,13 +21,13 @@ public class AutoMapperProfile : Profile
                 opt => opt.MapFrom(src => src.ImageUrl ?? string.Empty));
 
         CreateMap<UserEntity, UserDto>()
-        // For AutoMapper v15 constructor mapping behavior may differ; explicitly construct UserDto using constructor
-        .ConstructUsing(src => new UserDto(
-            src.UserName ?? string.Empty,
-            src.Name ?? string.Empty,
-            src.Surname ?? string.Empty,
-            src.Email ?? string.Empty,
-            src.UserRoles != null
+            // Map constructor parameters explicitly to ensure nulls become empty strings
+            .ForCtorParam("Username", opt => opt.MapFrom(src => src.UserName ?? string.Empty))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name ?? string.Empty))
+            .ForCtorParam("Surname", opt => opt.MapFrom(src => src.Surname ?? string.Empty))
+            .ForCtorParam("Email", opt => opt.MapFrom(src => src.Email ?? string.Empty))
+            .ForCtorParam("PhoneNumber", opt => opt.MapFrom(src => src.PhoneNumber ?? string.Empty))
+            .ForCtorParam("Roles", opt => opt.MapFrom(src => src.UserRoles != null
                 ? src.UserRoles.Select(ur => ur.Role != null ? ur.Role.Name : string.Empty).Where(n => !string.IsNullOrEmpty(n)).Select(n => n!).ToList()
                 : new List<string>()));
 
@@ -36,6 +36,7 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Surname, opt => opt.MapFrom(src => src.Surname))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+            .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
             .ForMember(dest => dest.UserRoles, opt => opt.Ignore());
     }
 }

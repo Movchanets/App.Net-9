@@ -37,7 +37,7 @@ public class AutoMapperTest
     public void UserDto_To_UserEntity_Mapping_Works()
     {
         // Arrange
-        var dto = new UserDto("jdoe", "John", "Doe", "jdoe@example.com", new List<string> { "User", "Admin" });
+        var dto = new UserDto("jdoe", "John", "Doe", "jdoe@example.com", string.Empty, new List<string> { "User", "Admin" });
 
         // Act
         var entity = _mapper.Map<UserEntity>(dto);
@@ -79,6 +79,7 @@ public class AutoMapperTest
         dto.Name.Should().Be("Alice");
         dto.Surname.Should().Be("Smith");
         dto.Email.Should().Be("alice@example.com");
+        dto.PhoneNumber.Should().Be(string.Empty);
         dto.Roles.Should().BeEquivalentTo(new[] { "User", "Admin" });
     }
 

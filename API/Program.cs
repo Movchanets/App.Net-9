@@ -16,6 +16,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using API.Authorization;
 using Scalar.AspNetCore;
 using Serilog;
 using API.Filters;
@@ -66,13 +68,12 @@ try
                 };
 
                 // робимо глобальною вимогу токена для всіх методів
-                document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                var item = new OpenApiSecurityRequirement();
+                item[new OpenApiSecurityScheme
                 {
-                    [new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                    }] = new List<string>()
-                });
+                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+                }] = new List<string>();
+                document.SecurityRequirements.Add(item);
 
                 return Task.CompletedTask;
             });
@@ -127,6 +128,9 @@ try
     // JWT Authentication
     builder.Services.AddScoped<ITokenService, TokenService>();
     builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
+    // Permission-based dynamic policies (policies like "Permission:users.read")
+    builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+    builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
     // Email sender (SMTP) - reads SmtpSettings from configuration
     // Registered as singleton so hosted background service can consume it safely.
     builder.Services.AddSingleton<Application.Interfaces.IEmailService, SmtpEmailService>();
@@ -144,17 +148,15 @@ try
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!))
-        };
+        options.TokenValidationParameters = new TokenValidationParameters();
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidateLifetime = true;
+        options.TokenValidationParameters.ValidateIssuerSigningKey = true;
+        options.TokenValidationParameters.ValidIssuer = builder.Configuration["JwtSettings:Issuer"];
+        options.TokenValidationParameters.ValidAudience = builder.Configuration["JwtSettings:Audience"];
+        options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!));
     });
 
     var app = builder.Build();
@@ -172,10 +174,8 @@ try
             options.Layout = ScalarLayout.Modern;
             options.ShowSidebar = true;
 
-            options.Authentication = new ScalarAuthenticationOptions
-            {
-                PreferredSecurityScheme = "Bearer"
-            };
+            options.Authentication = new ScalarAuthenticationOptions();
+            options.Authentication.PreferredSecurityScheme = "Bearer";
         });
     }
     app.UseAuthentication();

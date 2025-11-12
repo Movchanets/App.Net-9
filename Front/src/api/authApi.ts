@@ -1,4 +1,5 @@
 import axiosClient from './axiousClient'
+import type { User } from '../store/authStore'
 
 export interface CheckEmailResponse {
   exists: boolean
@@ -21,11 +22,7 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   token: string
-  user: {
-    id: string
-    email: string
-    name: string
-  }
+  user: User
 }
 
 export interface TokenResponse {
@@ -49,18 +46,18 @@ export const authApi = {
   checkEmail: async (email: string, turnstileToken?: string): Promise<CheckEmailResponse> => {
     const qs = new URLSearchParams({ email })
     if (turnstileToken) qs.set('turnstileToken', turnstileToken)
-    const response = await axiosClient.get<CheckEmailResponse>(`/users/check-email?${qs.toString()}`)
+    const response = await axiosClient.get<CheckEmailResponse>(`/auth/check-email?${qs.toString()}`)
     return response.data
   },
 
   // Логін
   login: async (data: LoginRequest): Promise<TokenResponse> => {
-    const response = await axiosClient.post<TokenResponse>('/users/login', data)
+  const response = await axiosClient.post<TokenResponse>('/auth/login', data)
 
     // Store tokens if backend returned them (keep backward-compatible keys)
-
+   
     console.log('Login response:', response.data); // Додано для налагодження
-    
+  
     const tokens : TokenResponse = response.data ;
  console.log('Login response tokens:', tokens); // Додано для налагодження
     const access = tokens.accessToken || ""
@@ -79,7 +76,7 @@ export const authApi = {
   // Реєстрація
   register: async (data: RegisterRequest): Promise<TokenResponse> => {
     console.log('Register data:', data); // Додано для налагодження
-    const response = await axiosClient.post<TokenResponse>('/users/register', data)
+  const response = await axiosClient.post<TokenResponse>('/auth/register', data)
     console.log('Register response:', response.data); // Додано для налагодження
     const tokens : TokenResponse = response.data ;
        const access = tokens.accessToken || ""
@@ -97,13 +94,13 @@ export const authApi = {
 
   // Ініціація відновлення паролю
   requestPasswordReset: async (data: RequestPasswordResetRequest): Promise<{ message: string }> => {
-    const response = await axiosClient.post('/users/forgot-password', data)
+    const response = await axiosClient.post('/auth/forgot-password', data)
     return response.data
   },
 
   // Завершення відновлення паролю
   resetPassword: async (data: ResetPasswordRequest): Promise<{ message: string }> => {
-    const response = await axiosClient.post('/users/reset-password', data)
+    const response = await axiosClient.post('/auth/reset-password', data)
     return response.data
   },
 
@@ -113,15 +110,19 @@ export const authApi = {
     return response.data
   },
 
-  // Get all users (admin)
-  getUsers: async (): Promise<any> => {
-    const response = await axiosClient.get('/users');
-    return response.data;
+  // Refresh access/refresh tokens using stored tokens
+  refreshTokens: async (): Promise<TokenResponse> => {
+    const access = localStorage.getItem('accessToken') || ''
+    const refresh = localStorage.getItem('refreshToken') || ''
+    const response = await axiosClient.post<TokenResponse>('/users/refresh', { accessToken: access, refreshToken: refresh })
+    const tokens: TokenResponse = response.data
+    const accessNew = tokens.accessToken || ''
+    const refreshNew = tokens.refreshToken || ''
+    if (accessNew) localStorage.setItem('accessToken', accessNew)
+    if (refreshNew) localStorage.setItem('refreshToken', refreshNew)
+    return { accessToken: accessNew, refreshToken: refreshNew }
   },
 
-  // Get user by email
-  getUserByEmail: async (email: string): Promise<any> => {
-    const response = await axiosClient.get(`/users/by-email/${encodeURIComponent(email)}`);
-    return response.data;
-  },
+  // Get all users (admin)
+  // (user-management methods moved to userApi.ts)
 }
