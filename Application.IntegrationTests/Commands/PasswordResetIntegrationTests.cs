@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
-using Application.IntegrationTests;
+
 using FluentAssertions;
 using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Xunit;
 
-namespace Application.IntegrationTests.Commands;
+namespace Infrastructure.IntegrationTests.Commands;
 
 public class PasswordResetIntegrationTests : TestBase
 {

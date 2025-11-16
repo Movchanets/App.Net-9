@@ -4,7 +4,7 @@ using FluentAssertions;
 using Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.IntegrationTests.Commands;
+namespace Infrastructure.IntegrationTests.Commands;
 
 /// <summary>
 /// Інтеграційні тести для RegisterUserHandler

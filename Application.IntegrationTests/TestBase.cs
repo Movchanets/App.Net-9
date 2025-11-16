@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Application.IntegrationTests;
+namespace Infrastructure.IntegrationTests;
 
 /// <summary>
 /// Базовий клас для інтеграційних тестів

@@ -3,7 +3,7 @@ using Application.Commands.User.CreateRole;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Application.IntegrationTests.Commands;
+namespace Infrastructure.IntegrationTests.Commands;
 
 /// <summary>
 /// Інтеграційні тести для CreateRoleCommandHandler

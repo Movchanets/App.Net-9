@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "Application.Tests\Application.Tests.csproj", "{4F6594B9-AD7F-41DF-9191-999EB6FDF5DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.IntegrationTests", "Application.IntegrationTests\Application.IntegrationTests.csproj", "{51BD2D34-C2CD-4DFF-9A40-50D6EFA3AEB5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.IntegrationTests", "Application.IntegrationTests\Infrastructure.IntegrationTests.csproj", "{51BD2D34-C2CD-4DFF-9A40-50D6EFA3AEB5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{635F0332-7C4C-4A6D-AFA2-0C36686AE29C}"
 EndProject
