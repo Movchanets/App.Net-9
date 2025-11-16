@@ -27,7 +27,7 @@ public class UpdateProfileHandlerTests
 	{
 		var id = Guid.NewGuid();
 		var updatedInfo = new UserDto(id, "newname", "New", string.Empty, "old@example.com", string.Empty, new List<string> { "User" });
-		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", null, null, "New", null))
+		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", "New", null))
 			.ReturnsAsync(updatedInfo);
 
 		var vm = new UpdateProfileVM { Username = "newname", Name = "New" };
@@ -42,7 +42,7 @@ public class UpdateProfileHandlerTests
 	public async System.Threading.Tasks.Task Handle_WhenUserNotFound_ReturnsFailure()
 	{
 		var id = Guid.NewGuid();
-		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", null, null, null, null))
+		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", null, null))
 			.ReturnsAsync((UserDto?)null);
 
 		var vm = new UpdateProfileVM { Username = "newname" };

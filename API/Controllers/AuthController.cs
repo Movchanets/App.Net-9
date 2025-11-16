@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using Application.Commands.User.CreateUser;
 using Application.Commands.User.AuthenticateUser;
 using Application.Commands.User.ForgotPassword;
 using Application.Commands.User.RefreshTokenCommand;
+using Application.Commands.User.RegisterUser;
 using Application.Commands.User.ResetPassword;
 using Application.Commands.User.SendTestEmail;
 using Application.Queries.User.CheckEmail;

@@ -1,4 +1,4 @@
-using Application.Commands.User.CreateUser;
+using Application.Commands.User.RegisterUser;
 using Application.ViewModels;
 using FluentAssertions;
 using Domain.Constants;

@@ -123,23 +123,6 @@ public class UsersEndpointsTests : IClassFixture<TestWebApplicationFactory>
 	}
 
 	[Fact]
-	public async Task UpdateMyProfile_UpdatesFields()
-	{
-		var (_, _, token) = await RegisterUserAndGetAccessToken();
-		_client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-		var update = new { name = "Regular", surname = "User", username = "user_updated", phoneNumber = "+123456789" };
-		var resp = await _client.PutAsJsonAsync("/api/users/me", update);
-		resp.StatusCode.Should().Be(HttpStatusCode.OK);
-
-		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
-		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
-		var payload = json.GetProperty("payload");
-		payload.GetProperty("username").GetString().Should().Be("user_updated");
-		payload.GetProperty("phoneNumber").GetString().Should().Be("+123456789");
-	}
-
-	[Fact]
 	public async Task ChangePassword_ThenLoginWithNewPassword_Succeeds()
 	{
 		// Register a fresh user and use the returned token

@@ -1,10 +1,9 @@
-using System.Text.RegularExpressions;
+using Application.Interfaces;
 using Application.ViewModels;
 using Domain.Constants;
 using MediatR;
-using Application.Interfaces;
 
-namespace Application.Commands.User.CreateUser;
+namespace Application.Commands.User.RegisterUser;
 
 /// <summary>
 /// Handler для реєстрації нового користувача
@@ -37,7 +36,7 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, ServiceR
     {
         // Turnstile token validated by API filter when present.
 
-        var res = await _identity.RegisterAsync(request.data.Email, request.data.Password, request.data.Name, request.data.Surname);
+        var res = await _identity.RegisterAsync(request.data);
         if (!res.Succeeded)
             return new ServiceResponse(false, "User creation failed", res.Errors);
         await _identity.EnsureRoleExistsAsync(Roles.User);

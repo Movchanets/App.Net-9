@@ -1,6 +1,7 @@
 using System;
 using Application.Interfaces;
 using Application.DTOs;
+using Application.ViewModels;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using Infrastructure.Entities.Identity;
@@ -75,51 +76,45 @@ public class UserService : IUserService
 	{
 		var u = await _userManager.FindByIdAsync(identityUserId.ToString());
 		if (u == null) return null;
-		var roles = (await _userManager.GetRolesAsync(u)).ToList();
-		var domain = await _userRepository.GetByIdentityUserIdAsync(u.Id);
-		var name = domain?.Name ?? string.Empty;
-		var surname = domain?.Surname ?? string.Empty;
-		return new UserDto(
-			u.Id,
-			u.UserName ?? string.Empty,
-			name,
-			surname,
-			u.Email ?? string.Empty,
-			u.PhoneNumber ?? string.Empty,
-			roles
-		);
+		
+		return await TryBuildUserDtoAsync(u);
 	}
 
-	public async Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(string email, string password, string firstName, string lastName)
+	public async Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(
+		RegistrationVM registrationModel)
 	{
-		var user = new ApplicationUser
-		{
-			Email = email
-		};
 
-		// ... (весь ваш код генерації UserName ... залишається без змін) ...
-		string baseUsername = ($"{firstName}.{lastName}").ToLower();
-		baseUsername = System.Text.RegularExpressions.Regex.Replace(baseUsername, "[^a-z0-9._-]", "");
-		if (string.IsNullOrWhiteSpace(baseUsername)) baseUsername = "user";
-		string username = baseUsername;
-		int counter = 1;
-		while (await _userManager.FindByNameAsync(username) != null)
 		{
-			counter++;
-			username = baseUsername + counter;
+			var user = new ApplicationUser
+			{
+				Email = registrationModel.Email
+			};
+
+			// ... (весь ваш код генерації UserName ... залишається без змін) ...
+			string baseUsername = ($"{registrationModel.Name}.{registrationModel.Surname}").ToLower();
+			baseUsername = System.Text.RegularExpressions.Regex.Replace(baseUsername, "[^a-z0-9._-]", "");
+			if (string.IsNullOrWhiteSpace(baseUsername)) baseUsername = "user";
+			string username = baseUsername;
+			int counter = 1;
+			while (await _userManager.FindByNameAsync(username) != null)
+			{
+				counter++;
+				username = baseUsername + counter;
+			}
+
+			user.UserName = username;
+
+			var result = await _userManager.CreateAsync(user, registrationModel.Password);
+			if (!result.Succeeded)
+				return (false, result.Errors.Select(e => e.Description).ToList(), null);
+			var domainUser = new User(user.Id, registrationModel.Name, registrationModel.Surname);
+			await _userRepository.AddAsync(domainUser);
+			user.DomainUserId = domainUser.Id;
+			await _userManager.UpdateAsync(user);
+
+
+			return (true, new List<string>(), user.Id);
 		}
-		user.UserName = username;
-
-		var result = await _userManager.CreateAsync(user, password);
-		if (!result.Succeeded)
-			return (false, result.Errors.Select(e => e.Description).ToList(), null);
-		var domainUser = new User(user.Id, firstName, lastName);
-		await _userRepository.AddAsync(domainUser);
-		user.DomainUserId = domainUser.Id;
-		await _userManager.UpdateAsync(user);
-
-
-		return (true, new List<string>(), user.Id);
 	}
 
 	public async Task<bool> EnsureRoleExistsAsync(string roleName)
@@ -170,13 +165,12 @@ public class UserService : IUserService
 		return result.Succeeded;
 	}
 
-	public async Task<UserDto?> UpdateIdentityProfileAsync(Guid identityUserId, string? username, string? email, string? phone, string? firstName, string? lastName)
+	public async Task<UserDto?> UpdateIdentityProfileAsync(Guid identityUserId, string? username, string? firstName,
+		string? lastName)
 	{
 		var user = await _userManager.FindByIdAsync(identityUserId.ToString());
 		if (user == null) return null;
 		if (!string.IsNullOrWhiteSpace(username)) user.UserName = username;
-		if (!string.IsNullOrWhiteSpace(email)) user.Email = email;
-		if (!string.IsNullOrWhiteSpace(phone)) user.PhoneNumber = phone;
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded) return null;
 		// Update domain user names when provided
@@ -186,9 +180,56 @@ public class UserService : IUserService
 			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname, domain.ImageUrl);
 			await _userRepository.UpdateAsync(domain);
 		}
+		
+		return  await TryBuildUserDtoAsync(user);
+	}
+
+	public async Task<UserDto?> UpdatePhoneAsync(Guid identityUserId, string phone)
+	{
+		var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+		if (user == null) return null;
+
+		user.PhoneNumber = phone;
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded) return null;
+
+		return  await TryBuildUserDtoAsync(user);
+	}
+
+	public async Task<UserDto?> UpdateEmailAsync(Guid identityUserId, string email)
+	{
+		var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+		if (user == null) return null;
+
+		user.Email = email;
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded) return null;
+
+		
+		return  await TryBuildUserDtoAsync(user);
+	}
+
+	public async Task<UserDto?> UpdateProfileInfoAsync(Guid identityUserId, string? username, string? firstName, string? lastName)
+	{
+		var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+		if (user == null) return null;
+
+		if (!string.IsNullOrWhiteSpace(username)) user.UserName = username;
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded) return null;
+
+		// Update domain user names when provided
+		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
+		if (domain != null && (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName)))
+		{
+			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname, domain.ImageUrl);
+			await _userRepository.UpdateAsync(domain);
+		}
+
 		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 		var name = domain?.Name ?? string.Empty;
 		var surname = domain?.Surname ?? string.Empty;
+
 		return new UserDto(
 			user.Id,
 			user.UserName ?? string.Empty,
@@ -203,19 +244,7 @@ public class UserService : IUserService
 	{
 		var user = await _userManager.FindByEmailAsync(email);
 		if (user == null) return null;
-		var roles = (await _userManager.GetRolesAsync(user)).ToList();
-		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
-		var name = domain?.Name ?? string.Empty;
-		var surname = domain?.Surname ?? string.Empty;
-		return new UserDto(
-			user.Id,
-			user.UserName ?? string.Empty,
-			name,
-			surname,
-			user.Email ?? string.Empty,
-			user.PhoneNumber ?? string.Empty,
-			roles
-		);
+		return await TryBuildUserDtoAsync(user);
 	}
 
 	public async Task<List<UserDto>> GetAllUsersAsync()
@@ -223,20 +252,29 @@ public class UserService : IUserService
 		var list = new List<UserDto>();
 		foreach (var user in _userManager.Users)
 		{
-			var roles = (await _userManager.GetRolesAsync(user)).ToList();
-			var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
-			var name = domain?.Name ?? string.Empty;
-			var surname = domain?.Surname ?? string.Empty;
-			list.Add(new UserDto(
-				user.Id,
-				user.UserName ?? string.Empty,
-				name,
-				surname,
-				user.Email ?? string.Empty,
-				user.PhoneNumber ?? string.Empty,
-				roles
-			));
+			var dto = await TryBuildUserDtoAsync(user);
+			if (dto != null)
+			{
+				list.Add(dto);
+			}
 		}
 		return list;
 	}
+
+	private async Task<UserDto?> TryBuildUserDtoAsync(ApplicationUser user)
+	{
+		var roles = (await _userManager.GetRolesAsync(user)).ToList();
+		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
+		if (domain == null) return null;
+		return new UserDto(
+			user.Id,
+			user.UserName ?? string.Empty,
+			domain.Name ?? string.Empty,
+			domain.Surname ?? string.Empty,
+			user.Email ?? string.Empty,
+			user.PhoneNumber ?? string.Empty,
+			roles
+		);
+	}
+
 }

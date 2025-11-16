@@ -1,10 +1,10 @@
-using Application.Commands.User.CreateUser;
 using Application.Interfaces;
 using Application.ViewModels;
 using Domain.Constants;
 using FluentAssertions;
 using Moq;
 using System;
+using Application.Commands.User.RegisterUser;
 
 namespace Application.Tests.Commands.User;
 
@@ -46,8 +46,9 @@ public class RegisterUserHandlerTests
 
         // Налаштовуємо mock: реєстрація успішна
         var newId = Guid.NewGuid();
+        
         _identityServiceMock
-            .Setup(x => x.RegisterAsync("test@example.com", "Password123!", "John", "Doe"))
+            .Setup(x => x.RegisterAsync(registrationData))
             .ReturnsAsync((true, new List<string>(), newId));
 
         _identityServiceMock
@@ -66,7 +67,7 @@ public class RegisterUserHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Message.Should().Be("User created successfully");
 
-        _identityServiceMock.Verify(x => x.RegisterAsync("test@example.com", "Password123!", "John", "Doe"), Times.Once);
+        _identityServiceMock.Verify(x => x.RegisterAsync(registrationData), Times.Once);
         _identityServiceMock.Verify(x => x.AddUserToRoleAsync(newId, Roles.User), Times.Once);
     }
 
@@ -90,7 +91,7 @@ public class RegisterUserHandlerTests
 
         // Налаштовуємо mock: RegisterAsync повертає помилку
         _identityServiceMock
-            .Setup(x => x.RegisterAsync("test@example.com", "weak", "John", "Doe"))
+            .Setup(x => x.RegisterAsync(registrationData))
             .ReturnsAsync((false, new List<string> { "Password too weak" }, null));
 
         // Act - виконуємо реєстрацію
@@ -128,7 +129,7 @@ public class RegisterUserHandlerTests
         // Реєстрація успішна
         var createdId = Guid.NewGuid();
         _identityServiceMock
-            .Setup(x => x.RegisterAsync("test@example.com", "Password123!", "John", "Doe"))
+            .Setup(x => x.RegisterAsync(registrationData))
             .ReturnsAsync((true, new List<string>(), createdId));
 
         // EnsureRoleExistsAsync створить роль, якщо її немає
