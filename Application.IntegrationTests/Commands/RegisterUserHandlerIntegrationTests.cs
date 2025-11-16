@@ -1,7 +1,7 @@
 using Application.Commands.User.CreateUser;
 using Application.ViewModels;
 using FluentAssertions;
-using Infrastructure.Data.Constants;
+using Domain.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.IntegrationTests.Commands;
@@ -16,8 +16,8 @@ public class RegisterUserHandlerIntegrationTests : TestBase
 
     public RegisterUserHandlerIntegrationTests()
     {
-        // Handler з РЕАЛЬНИМИ UserManager та RoleManager
-        _handler = new RegisterUserHandler(UserManager, RoleManager);
+        // Handler з РЕАЛЬНИМ IdentityService
+        _handler = new RegisterUserHandler(IdentityService);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         userInDb!.UserName.Should().MatchRegex(ValidationRegexPattern.UsernameValidationPattern);
         userInDb.Email.Should().Be("test@example.com");
         userInDb.NormalizedEmail.Should().Be("TEST@EXAMPLE.COM");
-        
+
         // Перевіряємо, що пароль захешований (не в plain text!)
         userInDb.PasswordHash.Should().NotBeNullOrEmpty();
         userInDb.PasswordHash.Should().NotBe("Password123!"); // Не plain text
@@ -80,10 +80,10 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Перевіряємо, що користувач має роль "User"
         var user = await UserManager.FindByEmailAsync("john@example.com");
         user.Should().NotBeNull();
-        
+
         var roles = await UserManager.GetRolesAsync(user!);
         roles.Should().Contain(Roles.User);
-        
+
         // Перевіряємо зв'язок у БД через таблицю UserRoles
         var userRoles = await DbContext.UserRoles
             .Where(ur => ur.UserId == user.Id)
@@ -145,7 +145,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // ✨ Перевіряємо БД - користувач НЕ створений
         var userInDb = await DbContext.Users.FirstOrDefaultAsync(u => u.Email == "weak@example.com");
         userInDb.Should().BeNull();
-        
+
         // Перевіряємо, що таблиця Users порожня
         var usersCount = await DbContext.Users.CountAsync();
         usersCount.Should().Be(0);
@@ -209,11 +209,11 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         // Assert - перевіряємо, що пароль захешований
         var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Email == "secure@example.com");
         user.Should().NotBeNull();
-        
+
         // Пароль НЕ має зберігатися в plain text
         user!.PasswordHash.Should().NotBe(password);
         user.PasswordHash.Should().NotBeNullOrEmpty();
-        
+
         // Але UserManager може перевірити пароль
         var isPasswordValid = await UserManager.CheckPasswordAsync(user, password);
         isPasswordValid.Should().BeTrue(); // Identity правильно верифікує пароль

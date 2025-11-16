@@ -1,29 +1,55 @@
-using Infrastructure.Entities;
-using Infrastructure.Repositories.Interfaces;
+using System;
+using Domain.Entities;
+using Domain.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories;
 
-public class UserRepository : GenericRepository<UserEntity>, IUserRepository
+/// <summary>
+/// Repository для роботи з доменними User
+/// </summary>
+public class UserRepository : IUserRepository
 {
-    public UserRepository(AppDbContext db) : base(db)
+    private readonly AppDbContext _db;
+
+    public UserRepository(AppDbContext db)
     {
+        _db = db;
     }
 
-    public async Task<UserEntity?> GetByUsernameAsync(string username)
+    public async Task<User?> GetByIdAsync(Guid id)
     {
-        return await _db.Users.FirstOrDefaultAsync(u => u.UserName == username);
+        return await _db.DomainUsers.FindAsync(id);
     }
 
-    public async Task<UserEntity?> GetUserByRefreshTokenAsync(string refreshToken)
+    public async Task<User?> GetByIdentityUserIdAsync(Guid identityUserId)
     {
-        return await _db.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        return await _db.DomainUsers
+            .FirstOrDefaultAsync(u => u.IdentityUserId == identityUserId);
     }
 
-    public async Task<bool> UpdateUserAsync(UserEntity user)
-    { 
-        _db.Users.Update(user);
-        var result = await _db.SaveChangesAsync();
-        return result > 0;
+    public async Task<User> AddAsync(User user)
+    {
+        _db.DomainUsers.Add(user);
+        await _db.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task<User> UpdateAsync(User user)
+    {
+        _db.DomainUsers.Update(user);
+        await _db.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task DeleteAsync(User user)
+    {
+        _db.DomainUsers.Remove(user);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetAllAsync()
+    {
+        return await _db.DomainUsers.ToListAsync();
     }
 }

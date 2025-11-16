@@ -1,7 +1,6 @@
 using Application.ViewModels;
-using Infrastructure.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using Application.Interfaces;
 
 namespace Application.Commands.User.CreateRole;
 
@@ -10,14 +9,14 @@ namespace Application.Commands.User.CreateRole;
 /// </summary>
 public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, ServiceResponse>
 {
-    private readonly RoleManager<RoleEntity> _roleManager;
+    private readonly IUserService _identity;
 
     /// <summary>
     /// Ініціалізує новий екземпляр CreateRoleCommandHandler
     /// </summary>
-    public CreateRoleCommandHandler(RoleManager<RoleEntity> roleManager)
+    public CreateRoleCommandHandler(IUserService identity)
     {
-        _roleManager = roleManager;
+        _identity = identity;
     }
 
     /// <summary>
@@ -28,12 +27,9 @@ public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, Servi
     /// <returns>Результат операції</returns>
     public async Task<ServiceResponse> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
-        var role = new RoleEntity { Name = request.RoleName };
-
-        var result = await _roleManager.CreateAsync(role);
-
-        return result.Succeeded
+        var created = await _identity.CreateRoleAsync(request.RoleName);
+        return created
             ? new ServiceResponse(true, "Role created successfully")
-            : new ServiceResponse(false, "Role creation failed", result.Errors.Select(e => e.Description).ToList());
+            : new ServiceResponse(false, "Role creation failed");
     }
 }

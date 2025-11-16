@@ -4,6 +4,7 @@ namespace Application.DTOs;
 /// DTO для користувача (immutable)
 /// </summary>
 public record UserDto(
+    System.Guid Id,
     string Username,
     string Name,
     string Surname,

@@ -1,8 +1,5 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
-using Infrastructure.Entities;
 using Application.Interfaces;
-using Application.Services.Email;
 
 namespace Application.Commands.User.SendTestEmail;
 

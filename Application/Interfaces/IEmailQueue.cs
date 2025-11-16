@@ -1,4 +1,4 @@
-namespace Application.Services.Email;
+namespace Application.Interfaces;
 
 public interface IEmailQueue
 {

@@ -2,7 +2,7 @@ using Application.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Services.Email;
+namespace Infrastructure.Services;
 
 public class EmailSenderBackgroundService : BackgroundService
 {

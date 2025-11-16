@@ -1,9 +1,10 @@
 using Application.Queries.User.GetUserByEmail;
+using Application.Interfaces;
+using Application.DTOs;
 using FluentAssertions;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
-using Microsoft.AspNetCore.Identity;
+using Application.Models;
 using Moq;
+using System;
 
 namespace Application.Tests.Commands.User;
 
@@ -13,19 +14,16 @@ namespace Application.Tests.Commands.User;
 /// </summary>
 public class GetUserByEmailQueryHandlerTests
 {
-    private readonly Mock<UserManager<UserEntity>> _userManagerMock;
+    private readonly Mock<IUserService> _identityServiceMock;
     private readonly GetUserByEmailQueryHandler _handler;
 
     /// <summary>
-    /// Конструктор - ініціалізує mock для UserManager
+    /// Конструктор - ініціалізує mock для IIdentityService
     /// </summary>
     public GetUserByEmailQueryHandlerTests()
     {
-        var userStore = new Mock<IUserStore<UserEntity>>();
-        _userManagerMock = new Mock<UserManager<UserEntity>>(
-            userStore.Object, null, null, null, null, null, null, null, null);
-
-        _handler = new GetUserByEmailQueryHandler(_userManagerMock.Object);
+        _identityServiceMock = new Mock<IUserService>();
+        _handler = new GetUserByEmailQueryHandler(_identityServiceMock.Object);
     }
 
     /// <summary>
@@ -39,26 +37,21 @@ public class GetUserByEmailQueryHandlerTests
         var email = "test@example.com";
         var query = new GetUserByEmailQuery(email);
 
-        // Створюємо тестового користувача
-        var user = new UserEntity
-        {
-            Id = 1,
-            UserName = "testuser",
-            Email = email
-        };
+        // Створюємо DTO з даними користувача
+        var identityInfo = new UserDto(
+            Guid.NewGuid(),
+            "testuser",
+            string.Empty,
+            string.Empty,
+            email,
+            string.Empty,
+            new List<string> { "User", "Admin" }
+        );
 
-        // Список ролей користувача
-        var roles = new List<string> { "User", "Admin" };
-
-        // Налаштовуємо mock: пошук за email повертає користувача
-        _userManagerMock
-            .Setup(x => x.FindByEmailAsync(email))
-            .ReturnsAsync(user);
-
-        // Налаштовуємо mock: отримання ролей користувача
-        _userManagerMock
-            .Setup(x => x.GetRolesAsync(user))
-            .ReturnsAsync(roles);
+        // Налаштовуємо mock: пошук за email повертає IdentityUserInfoDto
+        _identityServiceMock
+            .Setup(x => x.GetIdentityInfoByEmailAsync(email))
+            .ReturnsAsync(identityInfo);
 
         // Act - виконуємо запит
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -72,15 +65,14 @@ public class GetUserByEmailQueryHandlerTests
         // Перевіряємо дані в UserVM
         var userVM = result.Payload as UserVM;
         userVM.Should().NotBeNull();
-        userVM.Id.Should().Be(1);
+        userVM.Id.Should().NotBe(Guid.Empty);
         userVM.UserName.Should().Be("testuser");
         userVM.Email.Should().Be(email);
         userVM.UserRoles.Should().HaveCount(2); // 2 ролі
         userVM.UserRoles.Should().Contain(new[] { "User", "Admin" });
 
-        // Перевіряємо, що методи були викликані правильно
-        _userManagerMock.Verify(x => x.FindByEmailAsync(email), Times.Once);
-        _userManagerMock.Verify(x => x.GetRolesAsync(user), Times.Once);
+        // Перевіряємо, що метод був викликаний правильно
+        _identityServiceMock.Verify(x => x.GetIdentityInfoByEmailAsync(email), Times.Once);
     }
 
     /// <summary>
@@ -95,9 +87,9 @@ public class GetUserByEmailQueryHandlerTests
         var query = new GetUserByEmailQuery(email);
 
         // Налаштовуємо mock: пошук повертає null (користувач не знайдений)
-        _userManagerMock
-            .Setup(x => x.FindByEmailAsync(email))
-            .ReturnsAsync((UserEntity)null);
+        _identityServiceMock
+            .Setup(x => x.GetIdentityInfoByEmailAsync(email))
+            .ReturnsAsync((UserDto?)null);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -108,9 +100,7 @@ public class GetUserByEmailQueryHandlerTests
         result.Message.Should().Be("User not found");
         result.Payload.Should().BeNull(); // Немає даних
 
-        _userManagerMock.Verify(x => x.FindByEmailAsync(email), Times.Once);
-        // GetRolesAsync НЕ повинен викликатися (бо користувач не знайдений)
-        _userManagerMock.Verify(x => x.GetRolesAsync(It.IsAny<UserEntity>()), Times.Never);
+        _identityServiceMock.Verify(x => x.GetIdentityInfoByEmailAsync(email), Times.Once);
     }
 
     /// <summary>
@@ -124,22 +114,20 @@ public class GetUserByEmailQueryHandlerTests
         var email = "user@example.com";
         var query = new GetUserByEmailQuery(email);
 
-        var user = new UserEntity
-        {
-            Id = 2,
-            UserName = "basicuser",
-            Email = email
-        };
+        var identityInfo = new UserDto(
+            Guid.NewGuid(),
+            "basicuser",
+            string.Empty,
+            string.Empty,
+            email,
+            string.Empty,
+            new List<string>()
+        );
 
-        // Користувач знайдений
-        _userManagerMock
-            .Setup(x => x.FindByEmailAsync(email))
-            .ReturnsAsync(user);
-
-        // Але ролі порожні (новий користувач без призначення ролей)
-        _userManagerMock
-            .Setup(x => x.GetRolesAsync(user))
-            .ReturnsAsync(new List<string>());
+        // Користувач знайдений, але ролі порожні
+        _identityServiceMock
+            .Setup(x => x.GetIdentityInfoByEmailAsync(email))
+            .ReturnsAsync(identityInfo);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -147,7 +135,7 @@ public class GetUserByEmailQueryHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue(); // Операція успішна
-        
+
         var userVM = result.Payload as UserVM;
         userVM.Should().NotBeNull();
         userVM.UserRoles.Should().BeEmpty(); // Список ролей порожній
@@ -165,9 +153,9 @@ public class GetUserByEmailQueryHandlerTests
         var query = new GetUserByEmailQuery(string.Empty);
 
         // Пошук з порожнім email поверне null
-        _userManagerMock
-            .Setup(x => x.FindByEmailAsync(string.Empty))
-            .ReturnsAsync((UserEntity)null);
+        _identityServiceMock
+            .Setup(x => x.GetIdentityInfoByEmailAsync(string.Empty))
+            .ReturnsAsync((UserDto?)null);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -175,6 +163,6 @@ public class GetUserByEmailQueryHandlerTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         // Перевіряємо, що пошук все одно був викликаний (не було early return)
-        _userManagerMock.Verify(x => x.FindByEmailAsync(string.Empty), Times.Once);
+        _identityServiceMock.Verify(x => x.GetIdentityInfoByEmailAsync(string.Empty), Times.Once);
     }
 }

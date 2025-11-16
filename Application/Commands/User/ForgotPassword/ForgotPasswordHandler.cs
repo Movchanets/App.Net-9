@@ -1,15 +1,12 @@
 using Application.Commands.User.ForgotPassword;
 using Application.Interfaces;
-using Application.Services.Email;
-using Infrastructure.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Application.Commands.User.ForgotPassword;
 
 public sealed class ForgotPasswordHandler(
-	UserManager<UserEntity> userManager,
+	IUserService identity,
 	IMemoryCache memoryCache,
 	IEmailQueue emailQueue)
 	: IRequestHandler<ForgotPasswordCommand>
@@ -17,8 +14,8 @@ public sealed class ForgotPasswordHandler(
 	public async Task Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
 	{
 		// Turnstile token is validated by API filter when present.
-		var user = await userManager.FindByEmailAsync(request.Email);
-		if (user == null)
+		var exists = await identity.EmailExistsAsync(request.Email);
+		if (!exists)
 			return;
 
 		var cacheKey = $"forgot:{request.Email}";
@@ -30,13 +27,14 @@ public sealed class ForgotPasswordHandler(
 
 		if (attempts >= 5)
 		{
-			await userManager.UpdateSecurityStampAsync(user);
+			await identity.UpdateSecurityStampByEmailAsync(request.Email);
 			return;
 		}
 
 		memoryCache.Set(cacheKey, attempts + 1, TimeSpan.FromHours(1));
 
-		var token = await userManager.GeneratePasswordResetTokenAsync(user);
+		var token = await identity.GeneratePasswordResetTokenAsync(request.Email);
+		if (token is null) return;
 
 		var callbackUrl = $"{request.Origin}/reset-password?email={System.Net.WebUtility.UrlEncode(request.Email)}&token={System.Net.WebUtility.UrlEncode(token)}";
 

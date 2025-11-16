@@ -3,14 +3,12 @@ using API;
 using Application;
 using Application.Interfaces;
 using Application.Mapping;
-using Application.Services;
+using Infrastructure.Entities.Identity;
+using Domain.Interfaces.Repositories;
 using Infrastructure;
-using Infrastructure.Services;
-using Application.Services.Email;
-using Infrastructure.Entities;
 using Infrastructure.Initializer;
 using Infrastructure.Repositories;
-using Infrastructure.Repositories.Interfaces;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -81,22 +79,26 @@ try
         );
 
 
-    // PostgreSQL
-    builder.Services.AddDbContext<AppDbContext>(opt =>
-        opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    // DbContext
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        // Use PostgreSQL in non-testing environments
+        builder.Services.AddDbContext<AppDbContext>(opt =>
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    }
 
     // MediatR
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly);
     });
-    // AutoMapper
-    builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "<License Key Here>", typeof(Program));
+    // AutoMapper - scan Application assembly where AutoMapperProfile is located
+    builder.Services.AddAutoMapper(cfg => cfg.LicenseKey = "<License Key Here>", typeof(AssemblyMarker).Assembly);
 
     // Repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-    builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
+    builder.Services.AddIdentity<ApplicationUser, RoleEntity>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequiredLength = 6;
@@ -127,7 +129,8 @@ try
     builder.Services.AddMemoryCache();
     // JWT Authentication
     builder.Services.AddScoped<ITokenService, TokenService>();
-    builder.Services.AddScoped<IUserClaimsPrincipalFactory<UserEntity>, ClaimsPrincipalFactory>();
+    builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ClaimsPrincipalFactory>();
     // Permission-based dynamic policies (policies like "Permission:users.read")
     builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
     builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
@@ -139,7 +142,7 @@ try
     builder.Services.AddSingleton<IEmailQueue>(sp => sp.GetRequiredService<BackgroundEmailQueue>());
     builder.Services.AddHostedService<EmailSenderBackgroundService>();
     // Cloudflare Turnstile service
-    builder.Services.AddHttpClient<Application.Interfaces.ITurnstileService, Application.Services.Security.TurnstileService>();
+    builder.Services.AddHttpClient<Application.Interfaces.ITurnstileService, Infrastructure.Services.TurnstileService>();
     // Action filter which validates incoming Turnstile tokens when present
     builder.Services.AddScoped<TurnstileValidationFilter>();
     builder.Services.AddAuthentication(options =>
@@ -175,7 +178,7 @@ try
             options.ShowSidebar = true;
 
             options.Authentication = new ScalarAuthenticationOptions();
-            options.Authentication.PreferredSecurityScheme = "Bearer";
+            options.Authentication.PreferredSecuritySchemes = new[] { "Bearer" };
         });
     }
     app.UseAuthentication();
@@ -201,3 +204,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Required for WebApplicationFactory<Program> in integration tests
+public partial class Program { }

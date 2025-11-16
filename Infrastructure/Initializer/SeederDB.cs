@@ -1,10 +1,14 @@
-using Infrastructure.Data.Constants;
-using Infrastructure.Entities;
+using System;
+using Infrastructure.Entities.Identity;
+using Domain.Constants;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
+using Domain.Entities;
+using Domain.Interfaces.Repositories;
 
 namespace Infrastructure.Initializer;
 
@@ -22,12 +26,17 @@ public static class SeederDB
     {
         using var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserEntity>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<RoleEntity>>();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-        // застосувати міграції
-        await dbContext.Database.MigrateAsync();
+        // застосувати міграції (пропустити під час тестування зі SQLite in-memory)
+        if (!env.IsEnvironment("Testing"))
+        {
+            await dbContext.Database.MigrateAsync();
+        }
 
         // створюємо ролі
         if (!roleManager.Roles.Any())
@@ -83,7 +92,7 @@ public static class SeederDB
         if (!userManager.Users.Any())
         {
             var adminEmail = "admin@example.com";
-            var admin = new UserEntity
+            var admin = new ApplicationUser
             {
                 Email = adminEmail,
                 UserName = "admin",
@@ -93,6 +102,11 @@ public static class SeederDB
             var result = await userManager.CreateAsync(admin, "Qwerty-1!");
             if (result.Succeeded)
             {
+                // Тепер, коли EF згенерував Id для admin, створюємо доменного користувача з цим IdentityUserId
+                var domainAdmin = new User(admin.Id, "Admin", "User");
+                await userRepository.AddAsync(domainAdmin);
+                admin.DomainUserId = domainAdmin.Id;
+                await userManager.UpdateAsync(admin);
                 await userManager.AddToRoleAsync(admin, Roles.Admin);
                 await userManager.AddToRoleAsync(admin, Roles.User);
             }
@@ -106,22 +120,24 @@ public static class SeederDB
 
             // створюємо звичайного користувача
             var userEmail = "user@example.com";
-            var user = new UserEntity
+            var user = new ApplicationUser
             {
                 Email = userEmail,
                 UserName = "user",
                 EmailConfirmed = true
             };
-
-            result = await userManager.CreateAsync(user, "User123!");
-            if (result.Succeeded)
+            var result2 = await userManager.CreateAsync(user, "User123!");
+            if (result2.Succeeded)
             {
+                var domainUser = new User(user.Id, "Regular", "User");
+                await userRepository.AddAsync(domainUser);
+                user.DomainUserId = domainUser.Id;
+                await userManager.UpdateAsync(user);
                 await userManager.AddToRoleAsync(user, Roles.User);
-
             }
             else
             {
-                foreach (var error in result.Errors)
+                foreach (var error in result2.Errors)
                 {
                     Console.WriteLine($"Error: {error.Code} - {error.Description}");
                 }

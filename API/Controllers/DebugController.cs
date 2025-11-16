@@ -1,6 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
@@ -11,10 +11,10 @@ namespace API.Controllers;
 [Route("api/[controller]")]
 public class DebugController : ControllerBase
 {
-	private readonly UserManager<UserEntity> _userManager;
-	private readonly IUserClaimsPrincipalFactory<UserEntity> _claimsFactory;
+	private readonly UserManager<ApplicationUser> _userManager;
+	private readonly IUserClaimsPrincipalFactory<ApplicationUser> _claimsFactory;
 
-	public DebugController(UserManager<UserEntity> userManager, IUserClaimsPrincipalFactory<UserEntity> claimsFactory)
+	public DebugController(UserManager<ApplicationUser> userManager, IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory)
 	{
 		_userManager = userManager;
 		_claimsFactory = claimsFactory;

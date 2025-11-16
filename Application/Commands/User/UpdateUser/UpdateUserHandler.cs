@@ -1,42 +1,24 @@
 using Application.DTOs;
 using Application.ViewModels;
-using Infrastructure.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using Application.Interfaces;
 
 namespace Application.Commands.User.UpdateUser;
 
 public class UpdateUserHandler : IRequestHandler<UpdateUserCommand, ServiceResponse<UserDto>>
 {
-	private readonly UserManager<UserEntity> _userManager;
+	private readonly IUserService _identity;
 
-	public UpdateUserHandler(UserManager<UserEntity> userManager)
+	public UpdateUserHandler(IUserService identity)
 	{
-		_userManager = userManager;
+		_identity = identity;
 	}
 
 	public async Task<ServiceResponse<UserDto>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
 	{
-		var user = await _userManager.FindByIdAsync(request.Id.ToString());
-		if (user == null)
-			return new ServiceResponse<UserDto>(false, "User not found");
-
-		// Update allowed fields
-		if (!string.IsNullOrWhiteSpace(request.Data.Name)) user.Name = request.Data.Name;
-		if (!string.IsNullOrWhiteSpace(request.Data.Surname)) user.Surname = request.Data.Surname;
-		if (!string.IsNullOrWhiteSpace(request.Data.Email)) user.Email = request.Data.Email;
-		if (!string.IsNullOrWhiteSpace(request.Data.PhoneNumber)) user.PhoneNumber = request.Data.PhoneNumber;
-
-		var result = await _userManager.UpdateAsync(user);
-		if (!result.Succeeded)
-		{
-			var errorMessages = string.Join("; ", result.Errors.Select(e => e.Description));
-			return new ServiceResponse<UserDto>(false, $"Failed to update user: {errorMessages}");
-		}
-		var roles = (await _userManager.GetRolesAsync(user)).ToList();
-
-		var dto = new UserDto(user.UserName ?? string.Empty, user.Name ?? string.Empty, user.Surname ?? string.Empty, user.Email ?? string.Empty, user.PhoneNumber ?? string.Empty, roles);
-
+		var dto = await _identity.UpdateIdentityProfileAsync(request.Id, null, request.Data.Email, request.Data.PhoneNumber, request.Data.Name, request.Data.Surname);
+		if (dto == null)
+			return new ServiceResponse<UserDto>(false, "Failed to update user");
 		return new ServiceResponse<UserDto>(true, "User updated", dto);
 	}
 }

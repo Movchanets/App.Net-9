@@ -16,8 +16,8 @@ public class CreateRoleCommandHandlerIntegrationTests : TestBase
 
     public CreateRoleCommandHandlerIntegrationTests()
     {
-        // Створюємо handler з РЕАЛЬНИМ RoleManager (не mock!)
-        _handler = new CreateRoleCommandHandler(RoleManager);
+        // Створюємо handler з РЕАЛЬНИМ IdentityService (не mock!)
+        _handler = new CreateRoleCommandHandler(IdentityService);
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class CreateRoleCommandHandlerIntegrationTests : TestBase
     public async Task Handle_WhenRoleAlreadyExists_ShouldReturnError()
     {
         // Arrange - спочатку створюємо роль в БД
-        await RoleManager.CreateAsync(new Infrastructure.Entities.RoleEntity { Name = "User" });
-        
+        await RoleManager.CreateAsync(new Infrastructure.Entities.Identity.RoleEntity { Name = "User" });
+
         // Перевіряємо, що роль існує
         var existingRole = await DbContext.Roles.FirstOrDefaultAsync(r => r.Name == "User");
         existingRole.Should().NotBeNull();
@@ -65,8 +65,7 @@ public class CreateRoleCommandHandlerIntegrationTests : TestBase
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse();
         result.Message.Should().Be("Role creation failed");
-        result.Payload.Should().NotBeNull();
-        
+
         // Перевіряємо, що в БД все ще тільки одна роль "User"
         var rolesCount = await DbContext.Roles.CountAsync(r => r.Name == "User");
         rolesCount.Should().Be(1);
@@ -102,7 +101,7 @@ public class CreateRoleCommandHandlerIntegrationTests : TestBase
         // Assert - Identity поверне помилку валідації
         result.IsSuccess.Should().BeFalse();
         result.Message.Should().Be("Role creation failed");
-        
+
         // Перевіряємо, що роль НЕ збережена в БД
         var rolesCount = await DbContext.Roles.CountAsync();
         rolesCount.Should().Be(0);

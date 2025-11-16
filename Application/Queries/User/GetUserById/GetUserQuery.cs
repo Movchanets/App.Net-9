@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Queries.User.GetUserById;
 
-public record GetUserQuery(long Id) : IRequest<UserDto?>;
+public record GetUserQuery(System.Guid Id) : IRequest<UserDto?>;

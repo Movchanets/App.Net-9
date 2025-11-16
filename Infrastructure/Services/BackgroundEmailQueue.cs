@@ -1,6 +1,7 @@
 using System.Threading.Channels;
+using Application.Interfaces;
 
-namespace Application.Services.Email;
+namespace Infrastructure.Services;
 
 public class BackgroundEmailQueue : IEmailQueue
 {

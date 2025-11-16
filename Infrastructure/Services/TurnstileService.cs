@@ -3,7 +3,7 @@ using Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Services.Security;
+namespace Infrastructure.Services;
 
 public sealed class TurnstileService(HttpClient http, IConfiguration config, ILogger<TurnstileService> logger)
 	: ITurnstileService

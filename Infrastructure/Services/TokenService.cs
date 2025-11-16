@@ -1,14 +1,17 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Application.Interfaces;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
+using Domain.Entities;
+using Domain.Interfaces.Repositories;
+using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Application.Services;
+namespace Infrastructure.Services;
 
 /// <summary>
 /// Сервіс для роботи з JWT токенами
@@ -16,48 +19,56 @@ namespace Application.Services;
 public class TokenService : ITokenService
 {
     private readonly IConfiguration _config;
-    private readonly UserManager<UserEntity> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<RoleEntity> _roleManager;
-    private readonly IUserClaimsPrincipalFactory<UserEntity> _claimsFactory;
+    private readonly IUserClaimsPrincipalFactory<ApplicationUser> _claimsFactory;
+    private readonly IUserRepository _userRepository;
 
     /// <summary>
     /// Ініціалізує новий екземпляр TokenService
     /// </summary>
-    public TokenService(IConfiguration config, UserManager<UserEntity> userManager, RoleManager<RoleEntity> roleManager,
-        IUserClaimsPrincipalFactory<UserEntity> claimsFactory)
+    public TokenService(IConfiguration config, UserManager<ApplicationUser> userManager, RoleManager<RoleEntity> roleManager,
+        IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory, IUserRepository userRepository)
     {
         _config = config;
         _userManager = userManager;
         _roleManager = roleManager;
         _claimsFactory = claimsFactory;
+        _userRepository = userRepository;
     }
-    private async Task<List<Claim>> GetValidClaims(UserEntity user)
+    private async Task<List<Claim>> GetValidClaims(
+    ApplicationUser identityUser,
+    User domainUser)
     {
-        // Start with claims produced by the registered ClaimsPrincipalFactory (includes Name, NameIdentifier, etc.)
-        var principal = await _claimsFactory.CreateAsync(user);
+        var principal = await _claimsFactory.CreateAsync(identityUser);
         var claims = principal.Claims.ToList();
 
-        // Ensure we have a JTI
+        // JTI
         if (!claims.Any(c => c.Type == JwtRegisteredClaimNames.Jti))
             claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+        claims.Add(new Claim("firstName", domainUser.Name ?? ""));
+        claims.Add(new Claim("lastName", domainUser.Surname ?? "")); // Або family_name
+        claims.Add(new Claim("isBlocked", domainUser.IsBlocked.ToString()));
+        if (!string.IsNullOrEmpty(domainUser.ImageUrl))
+        {
+            claims.Add(new Claim("picture", domainUser.ImageUrl));
+        }
 
-        // Add/merge claims stored explicitly for the user
-        var userClaims = await _userManager.GetClaimsAsync(user);
+        // Додаємо кастомні клейми, збережені для IdentityUser
+        var userClaims = await _userManager.GetClaimsAsync(identityUser);
         foreach (var uc in userClaims)
         {
             if (!claims.Any(c => c.Type == uc.Type && c.Value == uc.Value))
                 claims.Add(uc);
         }
-
-        // Add roles as Role claims and merge role-specific claims
-        var userRoles = await _userManager.GetRolesAsync(user);
+        // Додаємо ролі та клейми, що належать цим ролям (все як у вас)
+        var userRoles = await _userManager.GetRolesAsync(identityUser);
         foreach (var userRole in userRoles)
         {
             if (!claims.Any(c => c.Type == ClaimTypes.Role && c.Value == userRole))
                 claims.Add(new Claim(ClaimTypes.Role, userRole));
 
-            
-
+            // Додаємо клейми з самої ролі (Permissions)
             var role = await _roleManager.FindByNameAsync(userRole);
             if (role != null)
             {
@@ -70,17 +81,27 @@ public class TokenService : ITokenService
             }
         }
 
-       
-
         return claims;
     }
+
     /// <summary>
     /// Генерує JWT access token для користувача
     /// </summary>
     /// <param name="user">Користувач для якого генерується токен</param>
     /// <returns>JWT токен</returns>
-    public async Task<string> GenerateAccessTokenAsync(UserEntity user)
+    public async Task<string> GenerateAccessTokenAsync(Guid identityUserId)
     {
+        // 1. Отримуємо Identity-користувача
+        var identityUser = await _userManager.FindByIdAsync(identityUserId.ToString());
+        if (identityUser == null)
+            throw new InvalidOperationException("Identity user not found");
+
+        // 2. Отримуємо Domain-користувача (НОВИЙ РЯДОК)
+        var domainUser = await _userRepository.GetByIdentityUserIdAsync(identityUserId);
+        if (domainUser == null)
+            throw new InvalidOperationException("Domain user profile not found for this identity");
+
+        // --- Решта коду без змін ---
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
             _config["JwtSettings:AccessTokenSecret"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -88,30 +109,35 @@ public class TokenService : ITokenService
         var token = new JwtSecurityToken(
             issuer: _config["JwtSettings:Issuer"],
             audience: _config["JwtSettings:Audience"],
-            claims: await GetValidClaims(user),
+
+            claims: await GetValidClaims(identityUser, domainUser),
+
             expires: DateTime.UtcNow.AddMinutes(int.Parse(_config["JwtSettings:AccessTokenExpirationMinutes"]!)),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+
     }
 
     /// <summary>
     /// Генерує refresh token
     /// </summary>
     /// <returns>Refresh token</returns>
-    public async Task<string> GenerateRefreshTokenAsync(UserEntity user)
+    public async Task<string> GenerateRefreshTokenAsync(Guid identityUserId)
     {
+        var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+        if (user == null) throw new InvalidOperationException("Identity user not found");
         var newRefreshToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
         user.RefreshToken = newRefreshToken;
         user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
         await _userManager.UpdateAsync(user);
-        return    newRefreshToken;    
+        return newRefreshToken;
     }
 
-    public async Task<TokenResponse> GenerateTokensAsync(UserEntity user)
+    public async Task<TokenResponse> GenerateTokensAsync(Guid identityUserId)
     {
-        return new TokenResponse(await GenerateAccessTokenAsync(user), await GenerateRefreshTokenAsync(user));
+        return new TokenResponse(await GenerateAccessTokenAsync(identityUserId), await GenerateRefreshTokenAsync(identityUserId));
     }
 
     /// <summary>

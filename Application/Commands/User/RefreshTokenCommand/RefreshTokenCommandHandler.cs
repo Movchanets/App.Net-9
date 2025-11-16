@@ -1,6 +1,5 @@
 using Application.Interfaces;
-using Infrastructure.Data.Models;
-using Infrastructure.Repositories.Interfaces;
+using Application.Models;
 
 namespace Application.Commands.User.RefreshTokenCommand;
 
@@ -12,15 +11,15 @@ using MediatR;
 public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, TokenResponse>
 {
     private readonly ITokenService _tokenService;
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _identityService;
 
     /// <summary>
     /// Ініціалізує новий екземпляр RefreshTokenCommandHandler
     /// </summary>
-    public RefreshTokenCommandHandler(ITokenService tokenService, IUserRepository userRepository)
+    public RefreshTokenCommandHandler(ITokenService tokenService, IUserService identityService)
     {
         _tokenService = tokenService;
-        _userRepository = userRepository;
+        _identityService = identityService;
     }
 
     /// <summary>
@@ -31,15 +30,13 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
     /// <returns>Нові access та refresh токени</returns>
     public async Task<TokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetUserByRefreshTokenAsync(request.RefreshToken);
-
-        if (user == null || user.RefreshTokenExpiryTime < DateTime.UtcNow)
+        var identityUserId = await _identityService.ValidateRefreshTokenAsync(request.RefreshToken);
+        if (!identityUserId.HasValue)
             throw new UnauthorizedAccessException("Invalid or expired refresh token");
 
-        var newAccessToken = await _tokenService.GenerateAccessTokenAsync(user);
-        var newRefreshToken =await _tokenService.GenerateRefreshTokenAsync(user);
+        var newAccessToken = await _tokenService.GenerateAccessTokenAsync(identityUserId.Value);
+        var newRefreshToken = await _tokenService.GenerateRefreshTokenAsync(identityUserId.Value);
 
-       
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 }

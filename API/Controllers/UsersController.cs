@@ -1,10 +1,11 @@
+using System;
 using System.Security.Claims;
 using Application.Queries.User;
 using Application.Queries.User.GetUserByEmail;
 using Application.Queries.User.GetUserById;
 using Application.Queries.User.GetUsers;
 using Application.Interfaces;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using API.Filters;
@@ -28,11 +29,11 @@ namespace API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly UserManager<UserEntity> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService, IMemoryCache memoryCache, ILogger<UsersController> logger)
+    public UsersController(IMediator mediator, UserManager<ApplicationUser> userManager, ITokenService tokenService, IMemoryCache memoryCache, ILogger<UsersController> logger)
     {
         _mediator = mediator;
         _userManager = userManager;
@@ -45,7 +46,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpGet("{id}")]
     [Authorize(Policy = "Permission:users.read")]
-    public async Task<IActionResult> GetUser(long id)
+    public async Task<IActionResult> GetUser(Guid id)
     {
         var result = await _mediator.Send(new GetUserQuery(id));
         if (result == null) return NotFound();
@@ -83,7 +84,7 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new GetProfileQuery(userId));
         if (!result.IsSuccess) return NotFound(result);
@@ -99,7 +100,7 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new UpdateProfileCommand(userId, data));
         if (!result.IsSuccess) return BadRequest(result);
@@ -115,7 +116,7 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new ChangePasswordCommand(userId, data));
         if (!result.IsSuccess) return BadRequest(result);
@@ -131,7 +132,7 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new UpdateUserCommand(userId, data));
         if (!result.IsSuccess) return BadRequest(result);
@@ -143,7 +144,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Policy = "Permission:users.delete")]
-    public async Task<IActionResult> DeleteUser(long id)
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _mediator.Send(new DeleteUserCommand(id));
         if (!result.IsSuccess) return BadRequest(result);

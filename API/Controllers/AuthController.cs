@@ -9,8 +9,8 @@ using Application.Queries.User.CheckEmail;
 using Application.DTOs;
 using Application.ViewModels;
 using Application.Interfaces;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
+using Infrastructure.Entities.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,11 +23,11 @@ namespace API.Controllers;
 public class AuthController : ControllerBase
 {
 	private readonly IMediator _mediator;
-	private readonly UserManager<UserEntity> _userManager;
+	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly ITokenService _tokenService;
 	private readonly ILogger<AuthController> _logger;
 
-	public AuthController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService, ILogger<AuthController> logger)
+	public AuthController(IMediator mediator, UserManager<ApplicationUser> userManager, ITokenService tokenService, ILogger<AuthController> logger)
 	{
 		_mediator = mediator;
 		_userManager = userManager;
@@ -41,7 +41,7 @@ public class AuthController : ControllerBase
 	{
 		var user = await _userManager.FindByIdAsync("1");
 		if (user == null) return NotFound("User not found");
-		var tokens = await _tokenService.GenerateTokensAsync(user);
+		var tokens = await _tokenService.GenerateTokensAsync(user.Id);
 		return Ok(tokens);
 	}
 
@@ -96,13 +96,13 @@ public class AuthController : ControllerBase
 		if (result.IsSuccess)
 		{
 			_logger.LogInformation("User created successfully: {Email}", request.Email);
-			UserEntity? user = await _userManager.FindByEmailAsync(request.Email);
+			ApplicationUser? user = await _userManager.FindByEmailAsync(request.Email);
 			if (user == null)
 			{
 				_logger.LogError("User not found after creation: {Email}", request.Email);
 				return StatusCode(500, "User creation failed.");
 			}
-			TokenResponse tokens = await _tokenService.GenerateTokensAsync(user);
+			TokenResponse tokens = await _tokenService.GenerateTokensAsync(user.Id);
 			return Ok(tokens);
 		}
 

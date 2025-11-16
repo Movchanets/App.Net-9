@@ -1,5 +1,5 @@
 using Infrastructure;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,8 +13,10 @@ namespace Application.IntegrationTests;
 public abstract class TestBase : IDisposable
 {
     protected readonly AppDbContext DbContext;
-    protected readonly UserManager<UserEntity> UserManager;
+    protected readonly UserManager<ApplicationUser> UserManager;
     protected readonly RoleManager<RoleEntity> RoleManager;
+    protected readonly Application.Interfaces.IUserService IdentityService;
+    protected readonly Domain.Interfaces.Repositories.IUserRepository UserRepository;
     private readonly ServiceProvider _serviceProvider;
 
     protected TestBase()
@@ -29,11 +31,11 @@ public abstract class TestBase : IDisposable
         var dbName = $"TestDb_{Guid.NewGuid()}"; // Унікальна БД для кожного тесту
         services.AddDbContext<AppDbContext>(options =>
             options.UseInMemoryDatabase(dbName));
-    
+
         // Налаштовуємо ASP.NET Core Identity (як у реальному додатку)
         // Для тестів замінимо провайдера токенів на простий детермінований провайдер,
         // щоб уникнути викликів DPAPI / нативних методів шифрування під час тестів.
-        var identityBuilder = services.AddIdentity<UserEntity, RoleEntity>(options =>
+        var identityBuilder = services.AddIdentity<ApplicationUser, RoleEntity>(options =>
             {
                 // Ті ж налаштування, що й у Program.cs
                 options.Password.RequireDigit = true;
@@ -45,20 +47,25 @@ public abstract class TestBase : IDisposable
 
         // Додаємо простий тестовий провайдер токенів під назвою "Simple" і використовуємо його
         // для скидання паролю у тестовому середовищі.
-        identityBuilder.AddTokenProvider<SimpleTestTokenProvider<UserEntity>>(SimpleTestTokenProvider<UserEntity>.ProviderName);
+        identityBuilder.AddTokenProvider<SimpleTestTokenProvider<ApplicationUser>>(SimpleTestTokenProvider<ApplicationUser>.ProviderName);
         services.Configure<Microsoft.AspNetCore.Identity.IdentityOptions>(opts =>
         {
-            opts.Tokens.PasswordResetTokenProvider = SimpleTestTokenProvider<UserEntity>.ProviderName;
+            opts.Tokens.PasswordResetTokenProvider = SimpleTestTokenProvider<ApplicationUser>.ProviderName;
         });
-      
-            
+
+        // Реєструємо репозиторій та сервіси
+        services.AddScoped<Domain.Interfaces.Repositories.IUserRepository, Infrastructure.Repositories.UserRepository>();
+        services.AddScoped<Application.Interfaces.IUserService, Infrastructure.Services.UserService>();
+
         // Будуємо ServiceProvider (контейнер залежностей)
         _serviceProvider = services.BuildServiceProvider();
 
         // Отримуємо екземпляри сервісів
         DbContext = _serviceProvider.GetRequiredService<AppDbContext>();
-        UserManager = _serviceProvider.GetRequiredService<UserManager<UserEntity>>();
+        UserManager = _serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         RoleManager = _serviceProvider.GetRequiredService<RoleManager<RoleEntity>>();
+        IdentityService = _serviceProvider.GetRequiredService<Application.Interfaces.IUserService>();
+        UserRepository = _serviceProvider.GetRequiredService<Domain.Interfaces.Repositories.IUserRepository>();
 
         // Створюємо схему БД (in-memory БД потребує ініціалізації)
         DbContext.Database.EnsureCreated();
