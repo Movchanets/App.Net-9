@@ -1,38 +1,37 @@
 using Application.Commands.User.Profile.UpdateProfile;
+using Application.DTOs;
+using Application.Interfaces;
 using Application.ViewModels;
 using FluentAssertions;
-using Infrastructure.Entities;
-using Microsoft.AspNetCore.Identity;
 using Moq;
 using System.Threading;
 using System.Collections.Generic;
 using Xunit;
+using System;
 
 namespace Application.Tests.Commands.User;
 
 public class UpdateProfileHandlerTests
 {
-	private readonly Mock<UserManager<UserEntity>> _userManagerMock;
+	private readonly Mock<IUserService> _identityServiceMock;
 	private readonly UpdateProfileHandler _handler;
 
 	public UpdateProfileHandlerTests()
 	{
-		var userStore = new Mock<IUserStore<UserEntity>>();
-		_userManagerMock = new Mock<UserManager<UserEntity>>(userStore.Object, null, null, null, null, null, null, null, null);
-		_handler = new UpdateProfileHandler(_userManagerMock.Object);
+		_identityServiceMock = new Mock<IUserService>();
+		_handler = new UpdateProfileHandler(_identityServiceMock.Object);
 	}
 
 	[Fact]
 	public async System.Threading.Tasks.Task Handle_WhenUpdateSucceeds_ReturnsUpdatedDto()
 	{
-		var user = new UserEntity { Id = 2, UserName = "old", Name = "Old", Surname = "User", Email = "old@example.com" };
-		_userManagerMock.Setup(x => x.FindByIdAsync("2")).ReturnsAsync(user);
-		_userManagerMock.Setup(x => x.FindByNameAsync("newname")).ReturnsAsync((UserEntity?)null);
-		_userManagerMock.Setup(x => x.UpdateAsync(It.IsAny<UserEntity>())).ReturnsAsync(IdentityResult.Success);
-		_userManagerMock.Setup(x => x.GetRolesAsync(It.IsAny<UserEntity>())).ReturnsAsync(new List<string> { "User" });
+		var id = Guid.NewGuid();
+		var updatedInfo = new UserDto(id, "newname", "New", string.Empty, "old@example.com", string.Empty, new List<string> { "User" });
+		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", "New", null))
+			.ReturnsAsync(updatedInfo);
 
 		var vm = new UpdateProfileVM { Username = "newname", Name = "New" };
-		var result = await _handler.Handle(new UpdateProfileCommand(2, vm), CancellationToken.None);
+		var result = await _handler.Handle(new UpdateProfileCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
 		result.Payload.Should().NotBeNull();
@@ -40,17 +39,16 @@ public class UpdateProfileHandlerTests
 	}
 
 	[Fact]
-	public async System.Threading.Tasks.Task Handle_WhenUsernameTaken_ReturnsFailure()
+	public async System.Threading.Tasks.Task Handle_WhenUserNotFound_ReturnsFailure()
 	{
-		var user = new UserEntity { Id = 3, UserName = "abc" };
-		var other = new UserEntity { Id = 4, UserName = "taken" };
-		_userManagerMock.Setup(x => x.FindByIdAsync("3")).ReturnsAsync(user);
-		_userManagerMock.Setup(x => x.FindByNameAsync("taken")).ReturnsAsync(other);
+		var id = Guid.NewGuid();
+		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", null, null))
+			.ReturnsAsync((UserDto?)null);
 
-		var vm = new UpdateProfileVM { Username = "taken" };
-		var result = await _handler.Handle(new UpdateProfileCommand(3, vm), CancellationToken.None);
+		var vm = new UpdateProfileVM { Username = "newname" };
+		var result = await _handler.Handle(new UpdateProfileCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeFalse();
-		result.Message.Should().Be("Username is already taken");
+		result.Message.Should().Be("Profile update failed");
 	}
 }

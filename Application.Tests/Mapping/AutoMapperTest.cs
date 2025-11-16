@@ -2,17 +2,16 @@ using Application.DTOs;
 using Application.Mapping;
 using AutoMapper;
 using FluentAssertions;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
+using Domain.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
 
 public class AutoMapperTest
 {
-    private static IMapper _mapper;
+    private readonly IMapper _mapper;
 
     public AutoMapperTest()
     {
-
         var mappingConfig = new MapperConfiguration(mc =>
         {
             mc.AddProfile(new AutoMapperProfile());
@@ -28,91 +27,45 @@ public class AutoMapperTest
                 // ignore if method not available in this AutoMapper version
             }
         }, NullLoggerFactory.Instance);
-        IMapper mapper = mappingConfig.CreateMapper();
-        _mapper = mapper;
-
+        _mapper = mappingConfig.CreateMapper();
     }
 
     [Fact]
-    public void UserDto_To_UserEntity_Mapping_Works()
+    public void DomainUser_To_UserDto_Mapping_Works()
     {
-        // Arrange
-        var dto = new UserDto("jdoe", "John", "Doe", "jdoe@example.com", string.Empty, new List<string> { "User", "Admin" });
+        // Arrange - Domain.User містить лише Name, Surname, ImageUrl
+        var domainUser = new User(System.Guid.NewGuid(), "John", "Doe");
 
         // Act
-        var entity = _mapper.Map<UserEntity>(dto);
+        var dto = _mapper.Map<UserDto>(domainUser);
 
-        // Assert
-        entity.Should().NotBeNull();
-        entity.UserName.Should().Be("jdoe");
-        entity.Name.Should().Be("John");
-        entity.Surname.Should().Be("Doe");
-        entity.Email.Should().Be("jdoe@example.com");
-        // UserRoles is ignored by mapping and should remain the default empty collection
-        entity.UserRoles.Should().NotBeNull();
-        entity.UserRoles.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void UserEntity_To_UserDto_Mapping_Maps_Roles_And_Basics()
-    {
-        // Arrange
-        var user = new UserEntity
-        {
-            UserName = "alice",
-            Name = "Alice",
-            Surname = "Smith",
-            Email = "alice@example.com",
-            UserRoles = new List<UserRoleEntity>
-            {
-                new UserRoleEntity { Role = new RoleEntity { Name = "User" } },
-                new UserRoleEntity { Role = new RoleEntity { Name = "Admin" } }
-            }
-        };
-
-        // Act
-        var dto = _mapper.Map<UserDto>(user);
-
-        // Assert
+        // Assert - базовий маппінг працює, але Username/Email/Roles заповнюються handler'ом
         dto.Should().NotBeNull();
-        dto.Username.Should().Be("alice");
-        dto.Name.Should().Be("Alice");
-        dto.Surname.Should().Be("Smith");
-        dto.Email.Should().Be("alice@example.com");
-        dto.PhoneNumber.Should().Be(string.Empty);
-        dto.Roles.Should().BeEquivalentTo(new[] { "User", "Admin" });
+        dto.Name.Should().Be("John");
+        dto.Surname.Should().Be("Doe");
+        dto.Username.Should().Be(string.Empty); // Заповнюється handler'ом з IIdentityService
+        dto.Email.Should().Be(string.Empty); // Заповнюється handler'ом з IIdentityService
+        dto.Roles.Should().BeEmpty(); // Заповнюється handler'ом з IIdentityService
     }
 
     [Fact]
-    public void UserEntity_To_UserVM_Maps_Image_And_UserRoles_And_Conventional_Props()
+    public void DomainUser_To_UserVM_Mapping_Works()
     {
         // Arrange
-        var user = new UserEntity
-        {
-            Id = 42,
-            UserName = "bob",
-            Email = "bob@example.com",
-            ImageUrl = "https://example.com/avatar.png",
-            IsBlocked = true,
-            PhoneNumber = "123456",
-            UserRoles = new List<UserRoleEntity>
-            {
-                new UserRoleEntity { Role = new RoleEntity { Name = "User" } }
-            }
-        };
+        var id = System.Guid.NewGuid();
+        var domainUser = new User(id, "Alice", "Smith");
 
         // Act
-        var vm = _mapper.Map<UserVM>(user);
+        var vm = _mapper.Map<UserVM>(domainUser);
 
         // Assert
         vm.Should().NotBeNull();
-        vm.Id.Should().Be(42);
-        vm.UserName.Should().Be("bob");
-        vm.Email.Should().Be("bob@example.com");
-        vm.Image.Should().Be("https://example.com/avatar.png");
-        vm.IsBlocked.Should().BeTrue();
-        vm.PhoneNumber.Should().Be("123456");
-        vm.UserRoles.Should().ContainSingle().Which.Should().Be("User");
+        vm.Id.Should().Be(id);
+        vm.FirstName.Should().Be("Alice");
+        vm.LastName.Should().Be("Smith");
+        vm.Image.Should().BeEmpty(); // Mapped from ImageUrl
+        vm.IsBlocked.Should().BeFalse(); // Default value from Domain.User
     }
 }
+
 

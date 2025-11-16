@@ -50,9 +50,21 @@ export const userApi = {
     return unwrapServiceResponse(response.data)
   },
 
-  // Update current user's profile (name, surname, username, phone)
-  updateMyProfile: async (payload: Partial<User>): Promise<User> => {
-    const response = await axiosClient.put<ServiceResponse<User>>('/users/me', payload)
+  // Update current user's phone
+  updateMyPhone: async (payload: { phoneNumber: string }): Promise<User> => {
+    const response = await axiosClient.put<ServiceResponse<User>>('/users/me/phone', payload)
+    return unwrapServiceResponse(response.data)
+  },
+
+  // Update current user's email
+  updateMyEmail: async (payload: { email: string }): Promise<User> => {
+    const response = await axiosClient.put<ServiceResponse<User>>('/users/me/email', payload)
+    return unwrapServiceResponse(response.data)
+  },
+
+  // Update current user's profile info (name, surname, username)
+  updateMyInfo: async (payload: { name?: string; surname?: string; username?: string }): Promise<User> => {
+    const response = await axiosClient.put<ServiceResponse<User>>('/users/me/info', payload)
     return unwrapServiceResponse(response.data)
   },
 

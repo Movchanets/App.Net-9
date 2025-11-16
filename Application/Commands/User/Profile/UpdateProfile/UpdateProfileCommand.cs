@@ -4,4 +4,4 @@ using MediatR;
 
 namespace Application.Commands.User.Profile.UpdateProfile;
 
-public record UpdateProfileCommand(long UserId, UpdateProfileVM Data) : IRequest<ServiceResponse<UserDto>>;
+public record UpdateProfileCommand(System.Guid UserId, UpdateProfileVM Data) : IRequest<ServiceResponse<UserDto>>;

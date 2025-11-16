@@ -1,9 +1,8 @@
 using Application.DTOs;
 using Application.Interfaces;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
+using Domain.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 
 namespace Application.Commands.User.AuthenticateUser;
 
@@ -12,12 +11,12 @@ namespace Application.Commands.User.AuthenticateUser;
 /// </summary>
 public sealed class AuthenticateUserHandler : IRequestHandler<AuthenticateUserCommand, TokenResponse>
 {
-	private readonly UserManager<UserEntity> _userManager;
+	private readonly IUserService _identityService;
 	private readonly ITokenService _tokenService;
 
-	public AuthenticateUserHandler(UserManager<UserEntity> userManager, ITokenService tokenService)
+	public AuthenticateUserHandler(IUserService identityService, ITokenService tokenService)
 	{
-		_userManager = userManager;
+		_identityService = identityService;
 		_tokenService = tokenService;
 	}
 
@@ -26,10 +25,14 @@ public sealed class AuthenticateUserHandler : IRequestHandler<AuthenticateUserCo
 		var dto = request.Request;
 		// Turnstile token is validated by API filter when present.
 
-		var user = await _userManager.FindByEmailAsync(dto.Email);
-		if (user == null || !await _userManager.CheckPasswordAsync(user, dto.Password))
+		var valid = await _identityService.ValidatePasswordAsync(dto.Email, dto.Password);
+		if (!valid)
 			throw new UnauthorizedAccessException("Invalid credentials");
 
-		return await _tokenService.GenerateTokensAsync(user);
+		Domain.Entities.User? domainUser = await _identityService.FindUserByEmailAsync(dto.Email);
+		if (domainUser is null)
+			throw new UnauthorizedAccessException("User not found");
+
+		return await _tokenService.GenerateTokensAsync(domainUser.IdentityUserId);
 	}
 }

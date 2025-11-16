@@ -1,11 +1,12 @@
+using System;
 using Microsoft.AspNetCore.Identity;
 
-namespace Infrastructure.Entities;
+namespace Infrastructure.Entities.Identity;
 
-public class RoleEntity : IdentityRole<long>
+public class RoleEntity : IdentityRole<Guid>
 {
     public string Description { get; set; } = string.Empty;
 
     // Навігаційна властивість
-    public ICollection<UserRoleEntity> UserRoles { get; set; } = new List<UserRoleEntity>();
+    public ICollection<ApplicationUserRole> UserRoles { get; set; } = new List<ApplicationUserRole>();
 }

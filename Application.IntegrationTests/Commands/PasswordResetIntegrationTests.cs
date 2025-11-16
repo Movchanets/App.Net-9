@@ -1,18 +1,18 @@
 using System.Threading.Tasks;
-using Application.IntegrationTests;
+
 using FluentAssertions;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Xunit;
 
-namespace Application.IntegrationTests.Commands;
+namespace Infrastructure.IntegrationTests.Commands;
 
 public class PasswordResetIntegrationTests : TestBase
 {
     [Fact]
     public async Task ResetPassword_Succeeds_WithValidToken()
     {
-        var user = new UserEntity { UserName = "testuser", Email = "test@example.com" };
+        var user = new ApplicationUser { UserName = "testuser", Email = "test@example.com" };
         var create = await UserManager.CreateAsync(user, "P@ssw0rd1");
         create.Succeeded.Should().BeTrue();
 
@@ -29,7 +29,7 @@ public class PasswordResetIntegrationTests : TestBase
     [Fact]
     public async Task ResetPassword_Fails_WithInvalidToken()
     {
-        var user = new UserEntity { UserName = "testuser2", Email = "test2@example.com" };
+        var user = new ApplicationUser { UserName = "testuser2", Email = "test2@example.com" };
         var create = await UserManager.CreateAsync(user, "P@ssw0rd1");
         create.Succeeded.Should().BeTrue();
 

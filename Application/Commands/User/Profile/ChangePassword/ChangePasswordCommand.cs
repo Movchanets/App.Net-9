@@ -3,4 +3,4 @@ using MediatR;
 
 namespace Application.Commands.User.Profile.ChangePassword;
 
-public record ChangePasswordCommand(long UserId, ChangePasswordVM Data) : IRequest<ServiceResponse>;
+public record ChangePasswordCommand(System.Guid UserId, ChangePasswordVM Data) : IRequest<ServiceResponse>;

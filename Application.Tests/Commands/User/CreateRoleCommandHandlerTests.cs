@@ -1,9 +1,8 @@
 using Application.Commands.User;
 using Application.Commands.User.CreateRole;
+using Application.Interfaces;
 using Application.ViewModels;
 using FluentAssertions;
-using Infrastructure.Entities;
-using Microsoft.AspNetCore.Identity;
 using Moq;
 
 namespace Application.Tests.Commands.User;
@@ -14,7 +13,7 @@ namespace Application.Tests.Commands.User;
 /// </summary>
 public class CreateRoleCommandHandlerTests
 {
-    private readonly Mock<RoleManager<RoleEntity>> _roleManagerMock;
+    private readonly Mock<IUserService> _identityServiceMock;
     private readonly CreateRoleCommandHandler _handler;
 
     /// <summary>
@@ -23,16 +22,11 @@ public class CreateRoleCommandHandlerTests
     /// </summary>
     public CreateRoleCommandHandlerTests()
     {
-        // Створюємо mock для RoleStore (зберігання ролей)
-        var roleStore = new Mock<IRoleStore<RoleEntity>>();
-        
-        // Створюємо mock для RoleManager з усіма необхідними залежностями
-        // RoleManager - це клас з ASP.NET Identity для управління ролями
-        _roleManagerMock = new Mock<RoleManager<RoleEntity>>(
-            roleStore.Object, null, null, null, null);
-        
+        // Створюємо mock для IIdentityService - абстракція для роботи з Identity
+        _identityServiceMock = new Mock<IUserService>();
+
         // Створюємо екземпляр handler'а з mock-залежністю
-        _handler = new CreateRoleCommandHandler(_roleManagerMock.Object);
+        _handler = new CreateRoleCommandHandler(_identityServiceMock.Object);
     }
 
     /// <summary>
@@ -44,11 +38,11 @@ public class CreateRoleCommandHandlerTests
     {
         // Arrange (Підготовка) - налаштовуємо вхідні дані та поведінку mock-об'єктів
         var command = new CreateRoleCommand { RoleName = "Admin" };
-        
-        // Налаштовуємо mock: коли викликається CreateAsync, повертаємо успішний результат
-        _roleManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<RoleEntity>()))
-            .ReturnsAsync(IdentityResult.Success);
+
+        // Налаштовуємо mock: коли викликається CreateRoleAsync, повертаємо успішний результат
+        _identityServiceMock
+            .Setup(x => x.CreateRoleAsync("Admin"))
+            .ReturnsAsync(true);
 
         // Act (Дія) - виконуємо метод, який тестуємо
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -57,9 +51,9 @@ public class CreateRoleCommandHandlerTests
         result.Should().NotBeNull(); // Результат не null
         result.IsSuccess.Should().BeTrue(); // Операція успішна
         result.Message.Should().Be("Role created successfully"); // Правильне повідомлення
-        
-        // Перевіряємо, що CreateAsync був викликаний рівно 1 раз з роллю "Admin"
-        _roleManagerMock.Verify(x => x.CreateAsync(It.Is<RoleEntity>(r => r.Name == "Admin")), Times.Once);
+
+        // Перевіряємо, що CreateRoleAsync був викликаний рівно 1 раз з роллю "Admin"
+        _identityServiceMock.Verify(x => x.CreateRoleAsync("Admin"), Times.Once);
     }
 
     /// <summary>
@@ -72,17 +66,11 @@ public class CreateRoleCommandHandlerTests
     {
         // Arrange - створюємо сценарій помилки
         var command = new CreateRoleCommand { RoleName = "Admin" };
-        
-        // Створюємо список помилок від Identity
-        var errors = new[]
-        {
-            new IdentityError { Description = "Role already exists" }
-        };
-        
-        // Налаштовуємо mock: CreateAsync повертає неуспішний результат з помилками
-        _roleManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<RoleEntity>()))
-            .ReturnsAsync(IdentityResult.Failed(errors));
+
+        // Налаштовуємо mock: CreateRoleAsync повертає false (роль вже існує)
+        _identityServiceMock
+            .Setup(x => x.CreateRoleAsync("Admin"))
+            .ReturnsAsync(false);
 
         // Act - виконуємо handler
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -91,10 +79,6 @@ public class CreateRoleCommandHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeFalse(); // Операція неуспішна
         result.Message.Should().Be("Role creation failed"); // Повідомлення про помилку
-        
-        // Перевіряємо, що Payload містить список помилок з правильним описом
-        result.Payload.Should().BeOfType<List<string>>()
-            .Which.Should().Contain("Role already exists");
     }
 
     /// <summary>
@@ -108,15 +92,15 @@ public class CreateRoleCommandHandlerTests
     {
         // Arrange
         var command = new CreateRoleCommand { RoleName = string.Empty };
-        _roleManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<RoleEntity>()))
-            .ReturnsAsync(IdentityResult.Success);
+        _identityServiceMock
+            .Setup(x => x.CreateRoleAsync(string.Empty))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert - перевіряємо, що CreateAsync був викликаний з порожнім ім'ям
+        // Assert - перевіряємо, що CreateRoleAsync був викликаний з порожнім ім'ям
         // Це показує, що handler не виконує валідацію (це правильно для CQRS)
-        _roleManagerMock.Verify(x => x.CreateAsync(It.Is<RoleEntity>(r => r.Name == string.Empty)), Times.Once);
+        _identityServiceMock.Verify(x => x.CreateRoleAsync(string.Empty), Times.Once);
     }
 }

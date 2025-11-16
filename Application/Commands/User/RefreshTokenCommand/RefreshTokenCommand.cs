@@ -1,4 +1,4 @@
-using Infrastructure.Data.Models;
+using Application.Models;
 using MediatR;
 
 namespace Application.Commands.User.RefreshTokenCommand;

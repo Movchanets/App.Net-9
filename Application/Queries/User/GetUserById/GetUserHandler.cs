@@ -1,6 +1,6 @@
 using Application.DTOs;
 using AutoMapper;
-using Infrastructure.Repositories.Interfaces;
+using Domain.Interfaces.Repositories;
 using MediatR;
 
 namespace Application.Queries.User.GetUserById;

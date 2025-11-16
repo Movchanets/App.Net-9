@@ -1,11 +1,10 @@
-using System.Text.RegularExpressions;
-using Application.Commands.User.CreateUser;
+using Application.Interfaces;
 using Application.ViewModels;
+using Domain.Constants;
 using FluentAssertions;
-using Infrastructure.Data.Constants;
-using Infrastructure.Entities;
-using Microsoft.AspNetCore.Identity;
 using Moq;
+using System;
+using Application.Commands.User.RegisterUser;
 
 namespace Application.Tests.Commands.User;
 
@@ -15,28 +14,16 @@ namespace Application.Tests.Commands.User;
 /// </summary>
 public class RegisterUserHandlerTests
 {
-    private readonly Mock<UserManager<UserEntity>> _userManagerMock;
-    private readonly Mock<RoleManager<RoleEntity>> _roleManagerMock;
+    private readonly Mock<IUserService> _identityServiceMock;
     private readonly RegisterUserHandler _handler;
 
     /// <summary>
-    /// Конструктор - ініціалізує mock-об'єкти для UserManager та RoleManager
+    /// Конструктор - ініціалізує mock для IIdentityService
     /// </summary>
     public RegisterUserHandlerTests()
     {
-        // Створюємо mock для UserStore (зберігання користувачів)
-        var userStore = new Mock<IUserStore<UserEntity>>();
-        // UserManager - клас ASP.NET Identity для управління користувачами (створення, паролі, ролі)
-        _userManagerMock = new Mock<UserManager<UserEntity>>(
-            userStore.Object, null, null, null, null, null, null, null, null);
-
-        // Створюємо mock для RoleStore
-        var roleStore = new Mock<IRoleStore<RoleEntity>>();
-        _roleManagerMock = new Mock<RoleManager<RoleEntity>>(
-            roleStore.Object, null, null, null, null);
-
-        // Створюємо handler з обома mock-залежностями
-        _handler = new RegisterUserHandler(_userManagerMock.Object, _roleManagerMock.Object);
+        _identityServiceMock = new Mock<IUserService>();
+        _handler = new RegisterUserHandler(_identityServiceMock.Object);
     }
 
     /// <summary>
@@ -57,20 +44,20 @@ public class RegisterUserHandlerTests
         };
         var command = new RegisterUserCommand(registrationData);
 
-        // Налаштовуємо mock: створення користувача успішне
-        _userManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<UserEntity>(), It.IsAny<string>()))
-            .ReturnsAsync(IdentityResult.Success);
+        // Налаштовуємо mock: реєстрація успішна
+        var newId = Guid.NewGuid();
+        
+        _identityServiceMock
+            .Setup(x => x.RegisterAsync(registrationData))
+            .ReturnsAsync((true, new List<string>(), newId));
 
-        // Налаштовуємо mock: роль "User" вже існує в системі
-        _roleManagerMock
-            .Setup(x => x.RoleExistsAsync(Roles.User))
+        _identityServiceMock
+            .Setup(x => x.EnsureRoleExistsAsync(Roles.User))
             .ReturnsAsync(true);
 
-        // Налаштовуємо mock: призначення ролі користувачу успішне
-        _userManagerMock
-            .Setup(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), Roles.User))
-            .ReturnsAsync(IdentityResult.Success);
+        _identityServiceMock
+            .Setup(x => x.AddUserToRoleAsync(newId, Roles.User))
+            .ReturnsAsync(true);
 
         // Act - виконуємо реєстрацію
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -80,13 +67,8 @@ public class RegisterUserHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Message.Should().Be("User created successfully");
 
-        // Перевіряємо, що користувач був створений з правильними даними
-        _userManagerMock.Verify(x => x.CreateAsync(
-            It.Is<UserEntity>(u => Regex.IsMatch(u.UserName, ValidationRegexPattern.UsernameValidationPattern) && u.Email == "test@example.com"),
-            "Password123!"), Times.Once);
-
-        // Перевіряємо, що роль була призначена
-        _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), Roles.User), Times.Once);
+        _identityServiceMock.Verify(x => x.RegisterAsync(registrationData), Times.Once);
+        _identityServiceMock.Verify(x => x.AddUserToRoleAsync(newId, Roles.User), Times.Once);
     }
 
     /// <summary>
@@ -107,16 +89,10 @@ public class RegisterUserHandlerTests
         };
         var command = new RegisterUserCommand(registrationData);
 
-        // Створюємо помилку від Identity
-        var errors = new[]
-        {
-            new IdentityError { Description = "Password too weak" }
-        };
-
-        // Налаштовуємо mock: CreateAsync повертає помилку
-        _userManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<UserEntity>(), It.IsAny<string>()))
-            .ReturnsAsync(IdentityResult.Failed(errors));
+        // Налаштовуємо mock: RegisterAsync повертає помилку
+        _identityServiceMock
+            .Setup(x => x.RegisterAsync(registrationData))
+            .ReturnsAsync((false, new List<string> { "Password too weak" }, null));
 
         // Act - виконуємо реєстрацію
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -129,7 +105,7 @@ public class RegisterUserHandlerTests
             .Which.Should().Contain("Password too weak");
 
         // Перевіряємо, що AddToRoleAsync НЕ викликався (бо користувач не був створений)
-        _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), It.IsAny<string>()), Times.Never);
+        _identityServiceMock.Verify(x => x.AddUserToRoleAsync(It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
     }
 
     /// <summary>
@@ -150,81 +126,28 @@ public class RegisterUserHandlerTests
         };
         var command = new RegisterUserCommand(registrationData);
 
-        // Користувач створюється успішно
-        _userManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<UserEntity>(), It.IsAny<string>()))
-            .ReturnsAsync(IdentityResult.Success);
+        // Реєстрація успішна
+        var createdId = Guid.NewGuid();
+        _identityServiceMock
+            .Setup(x => x.RegisterAsync(registrationData))
+            .ReturnsAsync((true, new List<string>(), createdId));
 
-        // Роль "User" ще НЕ існує в системі
-        _roleManagerMock
-            .Setup(x => x.RoleExistsAsync(Roles.User))
-            .ReturnsAsync(false);
+        // EnsureRoleExistsAsync створить роль, якщо її немає
+        _identityServiceMock
+            .Setup(x => x.EnsureRoleExistsAsync(Roles.User))
+            .ReturnsAsync(true);
 
-        // Створення ролі успішне
-        _roleManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<RoleEntity>()))
-            .ReturnsAsync(IdentityResult.Success);
-
-        // Призначення ролі успішне
-        _userManagerMock
-            .Setup(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), Roles.User))
-            .ReturnsAsync(IdentityResult.Success);
+        _identityServiceMock
+            .Setup(x => x.AddUserToRoleAsync(createdId, Roles.User))
+            .ReturnsAsync(true);
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        // Перевіряємо, що handler перевірив існування ролі
-        _roleManagerMock.Verify(x => x.RoleExistsAsync(Roles.User), Times.Once);
-        // Перевіряємо, що роль була створена
-        _roleManagerMock.Verify(x => x.CreateAsync(It.Is<RoleEntity>(r => r.Name == Roles.User)), Times.AtLeastOnce);
+        _identityServiceMock.Verify(x => x.EnsureRoleExistsAsync(Roles.User), Times.Once);
     }
 
-    /// <summary>
-    /// Тест 4: Перевірка коректного мапінгу даних
-    /// Сценарій: Перевіряємо, що дані з RegistrationVM правильно переносяться в UserEntity
-    /// Використовуємо Callback для "перехоплення" об'єкта, який передається в CreateAsync
-    /// </summary>
-    [Fact]
-    public async Task Handle_ShouldMapRegistrationDataCorrectly()
-    {
-        // Arrange
-        var registrationData = new RegistrationVM
-        {
-            Name = "John",
-            Surname = "Doe",
-            Email = "john@example.com",
-            Password = "SecurePass123!",
-            ConfirmPassword = "SecurePass123!"
-        };
-        var command = new RegisterUserCommand(registrationData);
 
-        // Змінна для збереження об'єкта UserEntity, який передається в CreateAsync
-        UserEntity capturedUser = null;
-
-        // Callback - це техніка Moq, яка дозволяє "підслуховувати" параметри виклику
-        _userManagerMock
-            .Setup(x => x.CreateAsync(It.IsAny<UserEntity>(), It.IsAny<string>()))
-            .Callback<UserEntity, string>((user, password) => capturedUser = user) // Зберігаємо user
-            .ReturnsAsync(IdentityResult.Success);
-
-        _roleManagerMock
-            .Setup(x => x.RoleExistsAsync(Roles.User))
-            .ReturnsAsync(true);
-
-        _userManagerMock
-            .Setup(x => x.AddToRoleAsync(It.IsAny<UserEntity>(), Roles.User))
-            .ReturnsAsync(IdentityResult.Success);
-
-        // Act
-        await _handler.Handle(command, CancellationToken.None);
-
-        // Assert - перевіряємо правильність мапінгу
-        capturedUser.Should().NotBeNull();
-        capturedUser.Name.Should().Be("John");
-        capturedUser.Surname.Should().Be("Doe");
-        capturedUser.UserName.Should().MatchRegex(ValidationRegexPattern.UsernameValidationPattern);
-        capturedUser.Email.Should().Be("john@example.com");
-    }
 }

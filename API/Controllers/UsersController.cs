@@ -1,16 +1,16 @@
+using System;
 using System.Security.Claims;
 using Application.Queries.User;
 using Application.Queries.User.GetUserByEmail;
 using Application.Queries.User.GetUserById;
 using Application.Queries.User.GetUsers;
 using Application.Interfaces;
-using Infrastructure.Entities;
+using Infrastructure.Entities.Identity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using API.Filters;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Application.Commands.User.UpdateUser;
 using Application.Commands.User.DeleteUser;
 using Application.ViewModels;
 using Application.Queries.User.GetProfile;
@@ -28,11 +28,11 @@ namespace API.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly UserManager<UserEntity> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly ITokenService _tokenService;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(IMediator mediator, UserManager<UserEntity> userManager, ITokenService tokenService, IMemoryCache memoryCache, ILogger<UsersController> logger)
+    public UsersController(IMediator mediator, UserManager<ApplicationUser> userManager, ITokenService tokenService, IMemoryCache memoryCache, ILogger<UsersController> logger)
     {
         _mediator = mediator;
         _userManager = userManager;
@@ -45,7 +45,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpGet("{id}")]
     [Authorize(Policy = "Permission:users.read")]
-    public async Task<IActionResult> GetUser(long id)
+    public async Task<IActionResult> GetUser(Guid id)
     {
         var result = await _mediator.Send(new GetUserQuery(id));
         if (result == null) return NotFound();
@@ -83,7 +83,7 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new GetProfileQuery(userId));
         if (!result.IsSuccess) return NotFound(result);
@@ -93,15 +93,64 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Оновлення профілю поточного користувача (name, surname, username, phone)
     /// </summary>
+    [Obsolete("Use /me/info, /me/phone, or /me/email instead")]
     [HttpPut("me")]
     [Authorize(Policy = "Permission:profile.update.self")]
     public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileVM data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new UpdateProfileCommand(userId, data));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Оновлення телефону поточного користувача
+    /// </summary>
+    [HttpPut("me/phone")]
+    [Authorize(Policy = "Permission:profile.update.self")]
+    public async Task<IActionResult> UpdateMyPhone([FromBody] UpdatePhoneVM data)
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
+
+        var result = await _mediator.Send(new Application.Commands.User.Profile.UpdatePhone.UpdatePhoneCommand(userId, data));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Оновлення email поточного користувача
+    /// </summary>
+    [HttpPut("me/email")]
+    [Authorize(Policy = "Permission:profile.update.self")]
+    public async Task<IActionResult> UpdateMyEmail([FromBody] UpdateEmailVM data)
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
+
+        var result = await _mediator.Send(new Application.Commands.User.Profile.UpdateEmail.UpdateEmailCommand(userId, data));
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Оновлення імені/прізвища/нікнейму поточного користувача
+    /// </summary>
+    [HttpPut("me/info")]
+    [Authorize(Policy = "Permission:profile.update.self")]
+    public async Task<IActionResult> UpdateMyInfo([FromBody] UpdateProfileInfoVM data)
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
+
+        var result = await _mediator.Send(new Application.Commands.User.Profile.UpdateProfileInfo.UpdateProfileInfoCommand(userId, data));
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }
@@ -115,35 +164,21 @@ public class UsersController : ControllerBase
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
 
         var result = await _mediator.Send(new ChangePasswordCommand(userId, data));
         if (!result.IsSuccess) return BadRequest(result);
         return Ok(result);
     }
 
-    /// <summary>
-    /// Оновлення користувача (виконується для поточного користувача з claims)
-    /// </summary>
-    [HttpPut]
-    [Authorize(Policy = "Permission:users.update")]
-    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserVM data)
-    {
-        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
-        if (!long.TryParse(idClaim, out var userId)) return Unauthorized();
-
-        var result = await _mediator.Send(new UpdateUserCommand(userId, data));
-        if (!result.IsSuccess) return BadRequest(result);
-        return Ok(result);
-    }
+   
 
     /// <summary>
     /// Видалення користувача
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Policy = "Permission:users.delete")]
-    public async Task<IActionResult> DeleteUser(long id)
+    public async Task<IActionResult> DeleteUser(Guid id)
     {
         var result = await _mediator.Send(new DeleteUserCommand(id));
         if (!result.IsSuccess) return BadRequest(result);

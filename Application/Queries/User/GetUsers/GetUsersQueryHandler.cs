@@ -1,8 +1,7 @@
 using Application.ViewModels;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using Application.Interfaces;
 
 namespace Application.Queries.User.GetUsers;
 
@@ -11,14 +10,14 @@ namespace Application.Queries.User.GetUsers;
 /// </summary>
 public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ServiceResponse>
 {
-    private readonly UserManager<UserEntity> _userManager;
+    private readonly IUserService _identity;
 
     /// <summary>
     /// Ініціалізує новий екземпляр GetUsersQueryHandler
     /// </summary>
-    public GetUsersQueryHandler(UserManager<UserEntity> userManager)
+    public GetUsersQueryHandler(IUserService identity)
     {
-        _userManager = userManager;
+        _identity = identity;
     }
 
     /// <summary>
@@ -29,28 +28,17 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, ServiceRespon
     /// <returns>Список користувачів з ролями</returns>
     public async Task<ServiceResponse> Handle(GetUsersQuery request, CancellationToken cancellationToken)
     {
-        var users = _userManager?.Users.ToList();
-        var userVMs = new List<UserVM>();
-        if (users != null)
-        {
-            foreach (var user in users)
-            {
-                var roles = await _userManager.GetRolesAsync(user);
-                var userVM = new UserVM
-                {
-                    Id = user.Id,
-                    UserName = user.UserName,
-                    Email = user.Email,
-                    UserRoles = roles.ToList()
-                };
-                userVMs.Add(userVM);
-            }
-        }
-        else
-        {
+        var users = await _identity.GetAllUsersAsync();
+        if (users.Count == 0)
             return new ServiceResponse(false, "No users found");
-        }
+        var userVMs = users.Select(u => new UserVM
+        {
+            Id = u.Id,
+            UserName = u.Username,
+            Email = u.Email,
+            UserRoles = u.Roles
+        }).ToList();
         return new ServiceResponse(true, "Users retrieved successfully", userVMs);
-     
+
     }
 }

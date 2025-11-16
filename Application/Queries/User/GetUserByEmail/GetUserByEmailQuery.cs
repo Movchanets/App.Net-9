@@ -1,5 +1,5 @@
 using Application.ViewModels;
-using Infrastructure.Data.Models;
+using Application.Models;
 using MediatR;
 
 namespace Application.Queries.User.GetUserByEmail;

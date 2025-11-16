@@ -1,35 +1,41 @@
 using Application.Queries.User.GetProfile;
 using Application.DTOs;
+using Application.Interfaces;
+using AutoMapper;
+using Domain.Entities;
+using Domain.Interfaces.Repositories;
 using FluentAssertions;
-using Infrastructure.Entities;
-using Microsoft.AspNetCore.Identity;
 using Moq;
 using System.Threading;
 using System.Collections.Generic;
 using Xunit;
+using System;
 
 namespace Application.Tests.Commands.User;
 
 public class GetProfileHandlerTests
 {
-	private readonly Mock<UserManager<UserEntity>> _userManagerMock;
+	private readonly Mock<IUserService> _identityServiceMock;
+	private readonly Mock<IUserRepository> _userRepositoryMock;
+	private readonly Mock<IMapper> _mapperMock;
 	private readonly GetProfileHandler _handler;
 
 	public GetProfileHandlerTests()
 	{
-		var userStore = new Mock<IUserStore<UserEntity>>();
-		_userManagerMock = new Mock<UserManager<UserEntity>>(userStore.Object, null, null, null, null, null, null, null, null);
-		_handler = new GetProfileHandler(_userManagerMock.Object);
+		_identityServiceMock = new Mock<IUserService>();
+		_userRepositoryMock = new Mock<IUserRepository>();
+		_mapperMock = new Mock<IMapper>();
+		_handler = new GetProfileHandler(_identityServiceMock.Object, _userRepositoryMock.Object, _mapperMock.Object);
 	}
 
 	[Fact]
 	public async System.Threading.Tasks.Task Handle_WhenUserExists_ReturnsProfile()
 	{
-		var user = new UserEntity { Id = 7, UserName = "jdoe", Name = "John", Surname = "Doe", Email = "jdoe@example.com" };
-		_userManagerMock.Setup(x => x.FindByIdAsync("7")).ReturnsAsync(user);
-		_userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "User" });
+		var id = Guid.NewGuid();
+		var dto = new UserDto(id, "jdoe", "John", "Doe", "jdoe@example.com", string.Empty, new List<string> { "User" });
+		_identityServiceMock.Setup(x => x.GetIdentityInfoByIdAsync(id)).ReturnsAsync(dto);
 
-		var result = await _handler.Handle(new GetProfileQuery(7), CancellationToken.None);
+		var result = await _handler.Handle(new GetProfileQuery(id), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
 		result.Payload.Should().NotBeNull();
@@ -40,8 +46,9 @@ public class GetProfileHandlerTests
 	[Fact]
 	public async System.Threading.Tasks.Task Handle_WhenUserNotFound_ReturnsFailure()
 	{
-		_userManagerMock.Setup(x => x.FindByIdAsync("9")).ReturnsAsync((UserEntity?)null);
-		var result = await _handler.Handle(new GetProfileQuery(9), CancellationToken.None);
+		var missing = Guid.NewGuid();
+		_identityServiceMock.Setup(x => x.GetIdentityInfoByIdAsync(missing)).ReturnsAsync((UserDto?)null);
+		var result = await _handler.Handle(new GetProfileQuery(missing), CancellationToken.None);
 		result.IsSuccess.Should().BeFalse();
 	}
 }

@@ -1,14 +1,14 @@
+using System;
 using System.Security.Claims;
-using Infrastructure.Data.Models;
-using Infrastructure.Entities;
+using Application.Models;
 
 namespace Application.Interfaces;
 
 public interface ITokenService
 {
-    Task<string> GenerateAccessTokenAsync(UserEntity user);
-    Task<string> GenerateRefreshTokenAsync(UserEntity user);
-    Task<TokenResponse> GenerateTokensAsync(UserEntity user);
+    Task<string> GenerateAccessTokenAsync(Guid identityUserId);
+    Task<string> GenerateRefreshTokenAsync(Guid identityUserId);
+    Task<TokenResponse> GenerateTokensAsync(Guid identityUserId);
     bool ValidateAccessToken(string token);
     ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
 }

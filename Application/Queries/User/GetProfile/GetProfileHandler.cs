@@ -1,29 +1,29 @@
 using Application.DTOs;
 using Application.ViewModels;
-using Infrastructure.Entities;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using Application.Interfaces;
+using Domain.Interfaces.Repositories;
+using AutoMapper;
 
 namespace Application.Queries.User.GetProfile;
 
 public class GetProfileHandler : IRequestHandler<GetProfileQuery, ServiceResponse<UserDto>>
 {
-	private readonly UserManager<UserEntity> _userManager;
+	private readonly IUserService _identity;
+	private readonly IUserRepository _userRepository;
+	private readonly IMapper _mapper;
 
-	public GetProfileHandler(UserManager<UserEntity> userManager)
+	public GetProfileHandler(IUserService identity, IUserRepository userRepository, IMapper mapper)
 	{
-		_userManager = userManager;
+		_identity = identity;
+		_userRepository = userRepository;
+		_mapper = mapper;
 	}
 
 	public async Task<ServiceResponse<UserDto>> Handle(GetProfileQuery request, CancellationToken cancellationToken)
 	{
-		var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-		if (user == null) return new ServiceResponse<UserDto>(false, "User not found");
-
-		var roles = (await _userManager.GetRolesAsync(user)).ToList();
-
-		var dto = new UserDto(user.UserName ?? string.Empty, user.Name ?? string.Empty, user.Surname ?? string.Empty, user.Email ?? string.Empty, user.PhoneNumber ?? string.Empty, roles);
-
+		var dto = await _identity.GetIdentityInfoByIdAsync(request.UserId);
+		if (dto == null) return new ServiceResponse<UserDto>(false, "User not found");
 		return new ServiceResponse<UserDto>(true, "Profile retrieved", dto);
 	}
 }
