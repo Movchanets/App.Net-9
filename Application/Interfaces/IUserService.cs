@@ -22,12 +22,13 @@ public interface IUserService
 	Task<bool> UpdateSecurityStampByEmailAsync(string email);
 	Task<bool> ResetPasswordAsync(string email, string token, string newPassword);
 	Task<bool> ChangePasswordAsync(Guid identityUserId, string currentPassword, string newPassword);
-	Task<UserDto?> UpdateIdentityProfileAsync(Guid identityUserId, string? username,  string? firstName, string? lastName);
+	Task<UserDto?> UpdateIdentityProfileAsync(Guid identityUserId, string? username, string? firstName, string? lastName);
 	// Granular profile updates
 	Task<UserDto?> UpdatePhoneAsync(Guid identityUserId, string phone);
 	Task<UserDto?> UpdateEmailAsync(Guid identityUserId, string email);
 	Task<UserDto?> UpdateProfileInfoAsync(Guid identityUserId, string? username, string? firstName, string? lastName);
 	Task<UserDto?> GetIdentityInfoByEmailAsync(string email);
 	Task<List<UserDto>> GetAllUsersAsync();
+	Task<UserDto?> UpdateProfilePictureAsync(Guid identityUserId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default);
 
 }

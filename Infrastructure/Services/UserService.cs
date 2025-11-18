@@ -15,12 +15,24 @@ public class UserService : IUserService
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly RoleManager<RoleEntity> _roleManager;
 	private readonly IUserRepository _userRepository;
+	private readonly IFileStorage _fileStorage;
+	private readonly IImageService _imageService;
+	private readonly IMediaImageRepository _mediaImageRepository;
 
-	public UserService(UserManager<ApplicationUser> userManager, RoleManager<RoleEntity> roleManager, IUserRepository userRepository)
+	public UserService(
+		UserManager<ApplicationUser> userManager,
+		RoleManager<RoleEntity> roleManager,
+		IUserRepository userRepository,
+		IFileStorage fileStorage,
+		IImageService imageService,
+		IMediaImageRepository mediaImageRepository)
 	{
 		_userManager = userManager;
 		_roleManager = roleManager;
 		_userRepository = userRepository;
+		_fileStorage = fileStorage;
+		_imageService = imageService;
+		_mediaImageRepository = mediaImageRepository;
 	}
 
 	public async Task<bool> ValidatePasswordAsync(string email, string password)
@@ -76,7 +88,7 @@ public class UserService : IUserService
 	{
 		var u = await _userManager.FindByIdAsync(identityUserId.ToString());
 		if (u == null) return null;
-		
+
 		return await TryBuildUserDtoAsync(u);
 	}
 
@@ -177,11 +189,11 @@ public class UserService : IUserService
 		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
 		if (domain != null && (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName)))
 		{
-			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname, domain.ImageUrl);
+			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname);
 			await _userRepository.UpdateAsync(domain);
 		}
-		
-		return  await TryBuildUserDtoAsync(user);
+
+		return await TryBuildUserDtoAsync(user);
 	}
 
 	public async Task<UserDto?> UpdatePhoneAsync(Guid identityUserId, string phone)
@@ -193,7 +205,7 @@ public class UserService : IUserService
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded) return null;
 
-		return  await TryBuildUserDtoAsync(user);
+		return await TryBuildUserDtoAsync(user);
 	}
 
 	public async Task<UserDto?> UpdateEmailAsync(Guid identityUserId, string email)
@@ -205,8 +217,8 @@ public class UserService : IUserService
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded) return null;
 
-		
-		return  await TryBuildUserDtoAsync(user);
+
+		return await TryBuildUserDtoAsync(user);
 	}
 
 	public async Task<UserDto?> UpdateProfileInfoAsync(Guid identityUserId, string? username, string? firstName, string? lastName)
@@ -222,13 +234,20 @@ public class UserService : IUserService
 		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
 		if (domain != null && (!string.IsNullOrWhiteSpace(firstName) || !string.IsNullOrWhiteSpace(lastName)))
 		{
-			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname, domain.ImageUrl);
+			domain.UpdateProfile(firstName ?? domain.Name, lastName ?? domain.Surname);
 			await _userRepository.UpdateAsync(domain);
 		}
 
 		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 		var name = domain?.Name ?? string.Empty;
 		var surname = domain?.Surname ?? string.Empty;
+
+		// Build avatar URL if available
+		string? avatarUrl = null;
+		if (domain?.Avatar != null && !string.IsNullOrWhiteSpace(domain.Avatar.StorageKey))
+		{
+			avatarUrl = _fileStorage.GetPublicUrl(domain.Avatar.StorageKey);
+		}
 
 		return new UserDto(
 			user.Id,
@@ -237,7 +256,8 @@ public class UserService : IUserService
 			lastName ?? surname,
 			user.Email ?? string.Empty,
 			user.PhoneNumber ?? string.Empty,
-			roles
+			roles,
+			avatarUrl
 		);
 	}
 	public async Task<UserDto?> GetIdentityInfoByEmailAsync(string email)
@@ -261,11 +281,68 @@ public class UserService : IUserService
 		return list;
 	}
 
+	public async Task<UserDto?> UpdateProfilePictureAsync(Guid identityUserId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default)
+	{
+		var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+		if (user == null) return null;
+
+		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
+		if (domain == null) return null;
+
+		// Process image: resize to thumbnail, convert to WebP, remove metadata
+		var processed = await _imageService.ProcessAsync(fileStream, ImageResizeMode.Thumbnail, 256, 256, cancellationToken);
+
+		// Upload processed image to storage
+		var storageKey = await _fileStorage.UploadAsync(processed.ImageStream, fileName, processed.ContentType, cancellationToken);
+
+		// Get public URL
+		var publicUrl = _fileStorage.GetPublicUrl(storageKey);
+
+		// Delete old avatar if exists
+		if (domain.Avatar != null && !string.IsNullOrWhiteSpace(domain.Avatar.StorageKey))
+		{
+			try
+			{
+				await _fileStorage.DeleteAsync(domain.Avatar.StorageKey, cancellationToken);
+			}
+			catch
+			{
+				// Log but don't fail if old avatar deletion fails
+			}
+		}
+
+		// Create MediaImage entity
+		var mediaImage = new MediaImage(
+			storageKey: storageKey,
+			mimeType: processed.ContentType,
+			width: processed.Width,
+			height: processed.Height,
+			altText: $"Avatar for {domain.Name} {domain.Surname}"
+		);
+
+		// Save MediaImage to database first (to satisfy FK constraint)
+		await _mediaImageRepository.AddAsync(mediaImage);
+
+		// Update domain entity
+		domain.SetAvatar(mediaImage);
+		await _userRepository.UpdateAsync(domain);
+
+		return await TryBuildUserDtoAsync(user);
+	}
+
 	private async Task<UserDto?> TryBuildUserDtoAsync(ApplicationUser user)
 	{
 		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
 		if (domain == null) return null;
+
+		// Build avatar URL if available
+		string? avatarUrl = null;
+		if (domain.Avatar != null && !string.IsNullOrWhiteSpace(domain.Avatar.StorageKey))
+		{
+			avatarUrl = _fileStorage.GetPublicUrl(domain.Avatar.StorageKey);
+		}
+
 		return new UserDto(
 			user.Id,
 			user.UserName ?? string.Empty,
@@ -273,7 +350,8 @@ public class UserService : IUserService
 			domain.Surname ?? string.Empty,
 			user.Email ?? string.Empty,
 			user.PhoneNumber ?? string.Empty,
-			roles
+			roles,
+			avatarUrl
 		);
 	}
 

@@ -171,7 +171,35 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
-   
+    /// <summary>
+    /// Завантаження фото профілю поточного користувача
+    /// </summary>
+    [HttpPost("me/picture")]
+    [Authorize(Policy = "Permission:profile.update.self")]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile file)
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { IsSuccess = false, Message = "File is required" });
+        }
+
+        _logger.LogInformation("User {UserId} is uploading profile picture: {FileName}, {Size} bytes", userId, file.FileName, file.Length);
+
+        using var stream = file.OpenReadStream();
+        var result = await _mediator.Send(new Application.Commands.User.Profile.UploadProfilePicture.UploadProfilePictureCommand(
+            userId,
+            stream,
+            file.FileName,
+            file.ContentType
+        ));
+
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
 
     /// <summary>
     /// Видалення користувача

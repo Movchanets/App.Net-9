@@ -27,9 +27,9 @@ public class ClaimsPrincipalFactory(
             {
                 identity.AddClaim(new Claim(ClaimTypes.Surname, domain.Surname));
             }
-            if (!string.IsNullOrEmpty(domain.ImageUrl))
+            if (domain.Avatar != null)
             {
-                identity.AddClaim(new Claim(JwtRegisteredClaimNames.Picture, domain.ImageUrl));
+                identity.AddClaim(new Claim(JwtRegisteredClaimNames.Picture, domain.Avatar.StorageKey));
             }
         }
         return principal;

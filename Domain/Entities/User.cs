@@ -12,7 +12,6 @@ public class User : BaseEntity<Guid>
     private string? _surname;
     private string? _email;
     private string? _phoneNumber;
-    private string? _imageUrl;
     private bool _isBlocked;
 
     // Конструктор для Entity Framework
@@ -68,14 +67,7 @@ public class User : BaseEntity<Guid>
         get => _phoneNumber;
         private set => _phoneNumber = value;
     }
-    /// <summary>
-    /// URL аватара користувача
-    /// </summary>
-    public string? ImageUrl
-    {
-        get => _imageUrl;
-        private set => _imageUrl = value;
-    }
+   
 
     /// <summary>
     /// Чи заблокований користувач
@@ -85,9 +77,17 @@ public class User : BaseEntity<Guid>
         get => _isBlocked;
         private set => _isBlocked = value;
     }
+    public Guid? AvatarId { get; private set; }
+    public virtual MediaImage? Avatar { get; private set; }
 
+   
     // Бізнес-методи
-
+    public void SetAvatar(MediaImage image)
+    {
+        // Логіка: аватар не прив'язаний до продукту, тому ProductId залишається null
+        Avatar = image;
+        AvatarId = image.Id;
+    }
     /// <summary>
     /// Оновлює профіль користувача
     /// </summary>
@@ -99,8 +99,6 @@ public class User : BaseEntity<Guid>
         _name = name;
         _surname = surname;
 
-        if (imageUrl != null)
-            _imageUrl = imageUrl;
 
         MarkAsUpdated();
     }
@@ -137,7 +135,7 @@ public class User : BaseEntity<Guid>
         if (_isBlocked)
             throw new InvalidOperationException("Cannot update avatar of blocked user");
 
-        _imageUrl = imageUrl;
+     
         MarkAsUpdated();
     }
 
@@ -146,7 +144,7 @@ public class User : BaseEntity<Guid>
     /// </summary>
     public void RemoveAvatar()
     {
-        _imageUrl = null;
+        
         MarkAsUpdated();
     }
 }

@@ -49,9 +49,9 @@ public class TokenService : ITokenService
         claims.Add(new Claim("firstName", domainUser.Name ?? ""));
         claims.Add(new Claim("lastName", domainUser.Surname ?? "")); // Або family_name
         claims.Add(new Claim("isBlocked", domainUser.IsBlocked.ToString()));
-        if (!string.IsNullOrEmpty(domainUser.ImageUrl))
+        if (domainUser.Avatar != null)
         {
-            claims.Add(new Claim("picture", domainUser.ImageUrl));
+            claims.Add(new Claim("picture", domainUser.Avatar.StorageKey));
         }
 
         // Додаємо кастомні клейми, збережені для IdentityUser

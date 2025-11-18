@@ -10,5 +10,6 @@ public record UserDto(
     string Surname,
     string Email,
     string PhoneNumber,
-    List<string> Roles
+    List<string> Roles,
+    string? AvatarUrl = null
 );

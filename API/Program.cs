@@ -19,6 +19,8 @@ using API.Authorization;
 using Scalar.AspNetCore;
 using Serilog;
 using API.Filters;
+using API.ServiceCollectionExtensions;
+using Infrastructure.Services.Images;
 
 // Початкове базове логування (до налаштування з appsettings)
 Log.Logger = new LoggerConfiguration()
@@ -97,6 +99,7 @@ try
 
     // Repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IMediaImageRepository, MediaImageRepository>();
 
     builder.Services.AddIdentity<ApplicationUser, RoleEntity>(options =>
         {
@@ -161,11 +164,26 @@ try
         options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!));
     });
-
+    // Image service
+    builder.Services.AddScoped<IImageService, ImageSharpService>();
+    // Передаємо builder.Environment у метод розширення
+    builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
+    if (builder.Environment.IsDevelopment())
+    {
+        var contentRoot = builder.Environment.ContentRootPath;
+        var webRoot = Path.Combine(contentRoot, "wwwroot");
+        // Якщо папки немає - створюємо її фізично
+        if (!Directory.Exists(webRoot))
+        {
+            Directory.CreateDirectory(webRoot);
+        }
+    }
     var app = builder.Build();
 
     if (app.Environment.IsDevelopment())
     {
+
+        app.UseStaticFiles();
         app.MapOpenApi();
         app.MapScalarApiReference(options =>
         {

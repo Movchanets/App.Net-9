@@ -12,3 +12,4 @@ API/appsettings.*.json
 !/README.md
 .cursor/
 Front/.env
+API/wwwroot/
