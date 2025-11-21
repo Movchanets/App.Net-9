@@ -112,6 +112,9 @@ try
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
     // Додаємо політику CORS
+    var allowedOrigins = builder.Configuration["AllowedCorsOrigins"]?
+        .Split(',', StringSplitOptions.RemoveEmptyEntries) 
+        ?? new[] { "http://localhost:5173", "http://localhost:5188" };
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -122,7 +125,7 @@ try
         });
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:5173", "http://localhost:5188")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
