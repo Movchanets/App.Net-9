@@ -20,11 +20,13 @@ public class User : BaseEntity<Guid>
     /// <summary>
     /// Конструктор для створення нового користувача
     /// </summary>
-    public User(Guid identityUserId, string? name = null, string? surname = null)
+    public User(Guid identityUserId, string? name = null, string? surname = null, string email = null, string? phoneNumber = null)
     {
         IdentityUserId = identityUserId;
         _name = name;
         _surname = surname;
+        _email = email;
+        _phoneNumber = phoneNumber;
         _isBlocked = false;
     }
 
@@ -67,7 +69,7 @@ public class User : BaseEntity<Guid>
         get => _phoneNumber;
         private set => _phoneNumber = value;
     }
-   
+
 
     /// <summary>
     /// Чи заблокований користувач
@@ -80,7 +82,7 @@ public class User : BaseEntity<Guid>
     public Guid? AvatarId { get; private set; }
     public virtual MediaImage? Avatar { get; private set; }
 
-   
+
     // Бізнес-методи
     public void SetAvatar(MediaImage image)
     {
@@ -100,6 +102,30 @@ public class User : BaseEntity<Guid>
         _surname = surname;
 
 
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Оновлює електронну пошту користувача
+    /// </summary>
+    public void UpdateEmail(string? email)
+    {
+        if (_isBlocked)
+            throw new InvalidOperationException("Cannot update email of blocked user");
+
+        _email = email;
+        MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Оновлює номер телефону користувача
+    /// </summary>
+    public void UpdatePhoneNumber(string? phoneNumber)
+    {
+        if (_isBlocked)
+            throw new InvalidOperationException("Cannot update phone number of blocked user");
+
+        _phoneNumber = phoneNumber;
         MarkAsUpdated();
     }
 
@@ -135,7 +161,7 @@ public class User : BaseEntity<Guid>
         if (_isBlocked)
             throw new InvalidOperationException("Cannot update avatar of blocked user");
 
-     
+
         MarkAsUpdated();
     }
 
@@ -144,7 +170,7 @@ public class User : BaseEntity<Guid>
     /// </summary>
     public void RemoveAvatar()
     {
-        
+
         MarkAsUpdated();
     }
 }

@@ -64,12 +64,11 @@ export default function ProfileForm() {
     formState: { errors: emailErrors, isSubmitting: emailSubmitting },
   } = useForm<EmailFormValues>({ resolver: yupResolver(emailSchema) as unknown as Resolver<EmailFormValues>, defaultValues: emailDefaults })
 
-  // Fetch profile if we don't have it yet
+  // Always fetch fresh profile when component mounts
   useEffect(() => {
-    if (!profile) {
-      fetchProfile().catch(() => setError(t('errors.fetch_failed')))
-    }
-  }, [profile, fetchProfile, t])
+    fetchProfile().catch(() => setError(t('errors.fetch_failed')))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // When profile becomes available (or changes), ensure form values are in sync.
   // We'll call reset as a fallback for already-mounted forms, but also

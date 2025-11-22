@@ -35,20 +35,21 @@ public class MediaImageRepositoryTests : IDisposable
 	}
 
 	[Fact]
-	public async Task AddAsync_ShouldAddMediaImageToDatabase()
+	public async Task Add_ShouldAddMediaImageToDatabase()
 	{
 		// Arrange
 		var mediaImage = new MediaImage("test-key.webp", "image/webp", 256, 256, "Test Image");
 
 		// Act
-		var result = await _repository.AddAsync(mediaImage);
+		_repository.Add(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Assert
-		result.Should().NotBeNull();
-		result.Id.Should().NotBeEmpty();
-		result.StorageKey.Should().Be("test-key.webp");
+		mediaImage.Should().NotBeNull();
+		mediaImage.Id.Should().NotBeEmpty();
+		mediaImage.StorageKey.Should().Be("test-key.webp");
 
-		var fromDb = await _dbContext.MediaImages.FindAsync(result.Id);
+		var fromDb = await _dbContext.MediaImages.FindAsync(mediaImage.Id);
 		fromDb.Should().NotBeNull();
 	}
 
@@ -57,7 +58,8 @@ public class MediaImageRepositoryTests : IDisposable
 	{
 		// Arrange
 		var mediaImage = new MediaImage("test-key.webp", "image/webp", 256, 256, "Test");
-		await _repository.AddAsync(mediaImage);
+		_repository.Add(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Act
 		var result = await _repository.GetByIdAsync(mediaImage.Id);
@@ -86,7 +88,8 @@ public class MediaImageRepositoryTests : IDisposable
 	{
 		// Arrange
 		var mediaImage = new MediaImage("unique-key.webp", "image/webp", 512, 512, "Test");
-		await _repository.AddAsync(mediaImage);
+		_repository.Add(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Act
 		var result = await _repository.GetByStorageKeyAsync("unique-key.webp");
@@ -108,33 +111,37 @@ public class MediaImageRepositoryTests : IDisposable
 	}
 
 	[Fact]
-	public async Task UpdateAsync_ShouldUpdateMediaImage()
+	public async Task Update_ShouldUpdateMediaImage()
 	{
 		// Arrange
 		var mediaImage = new MediaImage("test-key.webp", "image/webp", 256, 256, "Original Alt");
-		await _repository.AddAsync(mediaImage);
+		_repository.Add(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Act
 		mediaImage.UpdateMetadata("Updated Alt Text");
-		var result = await _repository.UpdateAsync(mediaImage);
+		_repository.Update(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Assert
-		result.AltText.Should().Be("Updated Alt Text");
+		mediaImage.AltText.Should().Be("Updated Alt Text");
 
 		var fromDb = await _dbContext.MediaImages.FindAsync(mediaImage.Id);
 		fromDb!.AltText.Should().Be("Updated Alt Text");
 	}
 
 	[Fact]
-	public async Task DeleteAsync_ShouldRemoveMediaImageFromDatabase()
+	public async Task Delete_ShouldRemoveMediaImageFromDatabase()
 	{
 		// Arrange
 		var mediaImage = new MediaImage("test-key.webp", "image/webp", 256, 256, "Test");
-		await _repository.AddAsync(mediaImage);
+		_repository.Add(mediaImage);
+		await _dbContext.SaveChangesAsync();
 		var id = mediaImage.Id;
 
 		// Act
-		await _repository.DeleteAsync(mediaImage);
+		_repository.Delete(mediaImage);
+		await _dbContext.SaveChangesAsync();
 
 		// Assert
 		var fromDb = await _dbContext.MediaImages.FindAsync(id);
@@ -145,9 +152,10 @@ public class MediaImageRepositoryTests : IDisposable
 	public async Task GetAllAsync_ShouldReturnAllMediaImages()
 	{
 		// Arrange
-		await _repository.AddAsync(new MediaImage("key1.webp", "image/webp", 256, 256, "Image 1"));
-		await _repository.AddAsync(new MediaImage("key2.webp", "image/webp", 512, 512, "Image 2"));
-		await _repository.AddAsync(new MediaImage("key3.webp", "image/webp", 128, 128, "Image 3"));
+		_repository.Add(new MediaImage("key1.webp", "image/webp", 256, 256, "Image 1"));
+		_repository.Add(new MediaImage("key2.webp", "image/webp", 512, 512, "Image 2"));
+		_repository.Add(new MediaImage("key3.webp", "image/webp", 128, 128, "Image 3"));
+		await _dbContext.SaveChangesAsync();
 
 		// Act
 		var result = await _repository.GetAllAsync();
@@ -167,9 +175,9 @@ public class MediaImageRepositoryTests : IDisposable
 		var image2 = new MediaImage("product2.webp", "image/webp", 256, 256, "Product Image 2");
 		var image3 = new MediaImage("other.webp", "image/webp", 256, 256, "Other Image");
 
-		await _repository.AddAsync(image1);
-		await _repository.AddAsync(image2);
-		await _repository.AddAsync(image3);
+		_repository.Add(image1);
+		_repository.Add(image2);
+		_repository.Add(image3);
 
 		// Manually set ProductId (since we don't have Product entity in this test)
 		image1.GetType().GetProperty("ProductId")!.SetValue(image1, productId);
@@ -196,10 +204,10 @@ public class MediaImageRepositoryTests : IDisposable
 		var productImage = new MediaImage("product.webp", "image/webp", 256, 256, "Product Image");
 		var avatarImage = new MediaImage("avatar.webp", "image/webp", 256, 256, "Avatar Image");
 
-		await _repository.AddAsync(orphaned1);
-		await _repository.AddAsync(orphaned2);
-		await _repository.AddAsync(productImage);
-		await _repository.AddAsync(avatarImage);
+		_repository.Add(orphaned1);
+		_repository.Add(orphaned2);
+		_repository.Add(productImage);
+		_repository.Add(avatarImage);
 
 		// Set ProductId for product image
 		productImage.GetType().GetProperty("ProductId")!.SetValue(productImage, productId);
@@ -225,7 +233,8 @@ public class MediaImageRepositoryTests : IDisposable
 	{
 		// Arrange
 		var avatarImage = new MediaImage("avatar.webp", "image/webp", 256, 256, "Avatar");
-		await _repository.AddAsync(avatarImage);
+		_repository.Add(avatarImage);
+		await _dbContext.SaveChangesAsync();
 
 		var user = new User(Guid.NewGuid(), "Test", "User");
 		user.SetAvatar(avatarImage);

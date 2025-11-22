@@ -10,8 +10,8 @@ public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id);
     Task<User?> GetByIdentityUserIdAsync(Guid identityUserId);
-    Task<User> AddAsync(User user);
-    Task<User> UpdateAsync(User user);
-    Task DeleteAsync(User user);
+    void Add(User user);
+    void Update(User user);
+    void Delete(User user);
     Task<IEnumerable<User>> GetAllAsync();
 }

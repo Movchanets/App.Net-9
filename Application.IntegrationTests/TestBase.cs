@@ -32,7 +32,8 @@ public abstract class TestBase : IDisposable
         // Налаштовуємо in-memory БД (кожен тест отримує окрему БД)
         var dbName = $"TestDb_{Guid.NewGuid()}"; // Унікальна БД для кожного тесту
         services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase(dbName));
+            options.UseInMemoryDatabase(dbName)
+                   .ConfigureWarnings(warnings => warnings.Ignore(new Microsoft.Extensions.Logging.EventId(1, "TransactionIgnoredWarning"))));
 
         // Налаштовуємо ASP.NET Core Identity (як у реальному додатку)
         // Для тестів замінимо провайдера токенів на простий детермінований провайдер,
@@ -58,6 +59,7 @@ public abstract class TestBase : IDisposable
         // Реєструємо репозиторії
         services.AddScoped<Domain.Interfaces.Repositories.IUserRepository, Infrastructure.Repositories.UserRepository>();
         services.AddScoped<Domain.Interfaces.Repositories.IMediaImageRepository, Infrastructure.Repositories.MediaImageRepository>();
+        services.AddScoped<Application.Interfaces.IUnitOfWork, Infrastructure.Services.UnitOfWork>();
 
         // Мокаємо IFileStorage та IImageService (не потрібні для більшості тестів)
         var fileStorageMock = new Mock<IFileStorage>();

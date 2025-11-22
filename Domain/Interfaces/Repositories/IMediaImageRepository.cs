@@ -27,20 +27,20 @@ public interface IMediaImageRepository
 	/// </summary>
 	/// <param name="mediaImage">Зображення для додавання</param>
 	/// <returns>Додане зображення з ідентифікатором</returns>
-	Task<MediaImage> AddAsync(MediaImage mediaImage);
+	void Add(MediaImage mediaImage);
 
 	/// <summary>
 	/// Оновлює існуюче зображення в базі даних.
 	/// </summary>
 	/// <param name="mediaImage">Зображення для оновлення</param>
 	/// <returns>Оновлене зображення</returns>
-	Task<MediaImage> UpdateAsync(MediaImage mediaImage);
+	void Update(MediaImage mediaImage);
 
 	/// <summary>
 	/// Видаляє зображення з бази даних.
 	/// </summary>
 	/// <param name="mediaImage">Зображення для видалення</param>
-	Task DeleteAsync(MediaImage mediaImage);
+	void Delete(MediaImage mediaImage);
 
 	/// <summary>
 	/// Отримує всі зображення з бази даних.

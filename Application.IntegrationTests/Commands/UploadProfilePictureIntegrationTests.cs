@@ -53,6 +53,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		// Register repositories
 		services.AddScoped<IUserRepository, UserRepository>();
 		services.AddScoped<IMediaImageRepository, MediaImageRepository>();
+		services.AddScoped<Application.Interfaces.IUnitOfWork, Infrastructure.Services.UnitOfWork>();
 
 		// Build service provider
 		_serviceProvider = services.BuildServiceProvider();
@@ -63,6 +64,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		_roleManager = _serviceProvider.GetRequiredService<RoleManager<RoleEntity>>();
 		_userRepository = _serviceProvider.GetRequiredService<IUserRepository>();
 		_mediaImageRepository = _serviceProvider.GetRequiredService<IMediaImageRepository>();
+		var unitOfWork = _serviceProvider.GetRequiredService<Application.Interfaces.IUnitOfWork>();
 
 		// Ensure database is created
 		_dbContext.Database.EnsureCreated();
@@ -92,7 +94,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 			_userRepository,
 			_fileStorageMock.Object,
 			_imageServiceMock.Object,
-			_mediaImageRepository
+			_mediaImageRepository,
+			unitOfWork
 		);
 	}
 
@@ -115,7 +118,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		await _userManager.CreateAsync(user, "Password123!");
 
 		var domainUser = new User(user.Id, "Test", "User");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 }); // JPEG header
 		var fileName = "avatar.jpg";
@@ -151,7 +155,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var user = new ApplicationUser { Email = "user@test.com", UserName = "user" };
 		await _userManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "John", "Doe");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 		var fileName = "photo.png";
@@ -177,7 +182,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var user = new ApplicationUser { Email = "user@test.com", UserName = "user" };
 		await _userManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Jane", "Smith");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 		var fileName = "avatar.jpg";
@@ -203,11 +209,12 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		await _userManager.CreateAsync(user, "Password123!");
 
 		var oldAvatar = new MediaImage("old-avatar.webp", "image/webp", 128, 128, "Old Avatar");
-		await _mediaImageRepository.AddAsync(oldAvatar);
+		_mediaImageRepository.Add(oldAvatar);
 
 		var domainUser = new User(user.Id, "Bob", "Johnson");
 		domainUser.SetAvatar(oldAvatar);
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -247,7 +254,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var user = new ApplicationUser { Email = "fk@test.com", UserName = "fkuser" };
 		await _userManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "FK", "Test");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -272,7 +280,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var user = new ApplicationUser { Email = "save@test.com", UserName = "saveuser" };
 		await _userManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Save", "Test");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -298,7 +307,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var user = new ApplicationUser { Email = "multi@test.com", UserName = "multiuser" };
 		await _userManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Multi", "Upload");
-		await _userRepository.AddAsync(domainUser);
+		_userRepository.Add(domainUser);
+		await _dbContext.SaveChangesAsync();
 
 		// Setup mock to return different keys
 		var uploadCount = 0;

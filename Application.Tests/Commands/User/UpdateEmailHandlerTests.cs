@@ -3,6 +3,7 @@ using Application.DTOs;
 using Application.Interfaces;
 using Application.ViewModels;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace Application.Tests.Commands.User;
 public class UpdateEmailHandlerTests
 {
 	private readonly Mock<IUserService> _identityServiceMock = new();
+	private readonly Mock<ILogger<UpdateEmailHandler>> _loggerMock = new();
 
 	[Fact]
 	public async System.Threading.Tasks.Task Handle_WhenUpdateSucceeds_ReturnsUpdatedDto()
@@ -24,7 +26,7 @@ public class UpdateEmailHandlerTests
 			.Setup(s => s.UpdateEmailAsync(id, "new@mail.com"))
 			.ReturnsAsync(dto);
 
-		var handler = new UpdateEmailHandler(_identityServiceMock.Object);
+		var handler = new UpdateEmailHandler(_identityServiceMock.Object, _loggerMock.Object);
 		var result = await handler.Handle(new UpdateEmailCommand(id, new UpdateEmailVM { Email = "new@mail.com" }), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
@@ -39,7 +41,7 @@ public class UpdateEmailHandlerTests
 			.Setup(s => s.UpdateEmailAsync(id, "bad"))
 			.ReturnsAsync((UserDto?)null);
 
-		var handler = new UpdateEmailHandler(_identityServiceMock.Object);
+		var handler = new UpdateEmailHandler(_identityServiceMock.Object, _loggerMock.Object);
 		var result = await handler.Handle(new UpdateEmailCommand(id, new UpdateEmailVM { Email = "bad" }), CancellationToken.None);
 
 		result.IsSuccess.Should().BeFalse();

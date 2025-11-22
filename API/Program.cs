@@ -100,6 +100,7 @@ try
     // Repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IMediaImageRepository, MediaImageRepository>();
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
     builder.Services.AddIdentity<ApplicationUser, RoleEntity>(options =>
         {
@@ -113,8 +114,9 @@ try
         .AddDefaultTokenProviders();
     // Додаємо політику CORS
     var allowedOrigins = builder.Configuration["AllowedCorsOrigins"]?
-        .Split(',', StringSplitOptions.RemoveEmptyEntries) 
+        .Split(',', StringSplitOptions.RemoveEmptyEntries)
         ?? new[] { "http://localhost:5173", "http://localhost:5188" };
+    
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>

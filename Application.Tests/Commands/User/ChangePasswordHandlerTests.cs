@@ -2,6 +2,7 @@ using Application.Commands.User.Profile.ChangePassword;
 using Application.Interfaces;
 using Application.ViewModels;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Threading;
 using Xunit;
@@ -12,12 +13,14 @@ namespace Application.Tests.Commands.User;
 public class ChangePasswordHandlerTests
 {
 	private readonly Mock<IUserService> _identityServiceMock;
+	private readonly Mock<ILogger<ChangePasswordHandler>> _loggerMock;
 	private readonly ChangePasswordHandler _handler;
 
 	public ChangePasswordHandlerTests()
 	{
 		_identityServiceMock = new Mock<IUserService>();
-		_handler = new ChangePasswordHandler(_identityServiceMock.Object);
+		_loggerMock = new Mock<ILogger<ChangePasswordHandler>>();
+		_handler = new ChangePasswordHandler(_identityServiceMock.Object, _loggerMock.Object);
 	}
 
 	[Fact]

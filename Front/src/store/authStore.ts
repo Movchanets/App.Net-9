@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import { parseJwt, toArray } from '../utils/jwt'
 
 export interface User {
@@ -21,7 +22,7 @@ interface AuthState {
   logout: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => {
+export const useAuthStore = create<AuthState>()(devtools((set) => {
   // read stored tokens once at initialization
   const storedToken = localStorage.getItem('accessToken') || localStorage.getItem('token')
   const storedRefresh = localStorage.getItem('refreshToken')
@@ -95,10 +96,16 @@ export const useAuthStore = create<AuthState>((set) => {
     },
   
   logout: () => {
-   
+    // Clear profile store when logging out
+    import('./profileStore').then(({ useProfileStore }) => {
+      useProfileStore.getState().clearProfile()
+    }).catch(() => {
+      // ignore if profileStore is not available
+    })
+    
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     set({ token: null, refreshToken: null, user: null, isAuthenticated: false })
   }
-  }
-});
+}
+}, { name: 'AuthStore' }));

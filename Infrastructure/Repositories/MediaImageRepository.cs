@@ -39,30 +39,25 @@ public class MediaImageRepository : IMediaImageRepository
 	/// <summary>
 	/// Додає нове MediaImage в БД
 	/// </summary>
-	public async Task<MediaImage> AddAsync(MediaImage mediaImage)
+	public void Add(MediaImage mediaImage)
 	{
 		_db.MediaImages.Add(mediaImage);
-		await _db.SaveChangesAsync();
-		return mediaImage;
 	}
 
 	/// <summary>
 	/// Оновлює MediaImage в БД
 	/// </summary>
-	public async Task<MediaImage> UpdateAsync(MediaImage mediaImage)
+	public void Update(MediaImage mediaImage)
 	{
 		_db.MediaImages.Update(mediaImage);
-		await _db.SaveChangesAsync();
-		return mediaImage;
 	}
 
 	/// <summary>
 	/// Видаляє MediaImage з БД
 	/// </summary>
-	public async Task DeleteAsync(MediaImage mediaImage)
+	public void Delete(MediaImage mediaImage)
 	{
 		_db.MediaImages.Remove(mediaImage);
-		await _db.SaveChangesAsync();
 	}
 
 	/// <summary>
