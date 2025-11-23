@@ -32,8 +32,20 @@ public static class FileStorageExtensions
                     
                     // Якщо шлях не заданий явно в конфигу, беремо стандартний у wwwroot/uploads
                     var relativePath = localSection.GetValue<string>("FolderName") ?? "uploads";
-                    
-                    options.BasePath = Path.Combine(environment.WebRootPath, relativePath);
+                    // У тестовому середовищі WebRootPath може бути null -> Path.Combine кине ArgumentNullException
+                    var webRoot = environment.WebRootPath;
+                    if (string.IsNullOrWhiteSpace(webRoot))
+                    {
+                        // Падіння в CI (GitHub Actions) показало WebRootPath == null. Даємо безпечний fallback.
+                        var contentRoot = environment.ContentRootPath ?? Directory.GetCurrentDirectory();
+                        webRoot = Path.Combine(contentRoot, "wwwroot");
+                        if (!Directory.Exists(webRoot))
+                        {
+                            Directory.CreateDirectory(webRoot);
+                        }
+                    }
+
+                    options.BasePath = Path.Combine(webRoot, relativePath);
                     options.RequestPath = $"/{relativePath}";
                 });
                 
