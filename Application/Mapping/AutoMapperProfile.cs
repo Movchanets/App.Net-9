@@ -14,7 +14,10 @@ public class AutoMapperProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.IdentityUserId))
             .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.Name ?? string.Empty))
             .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.Surname ?? string.Empty))
-            .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.ImageUrl ?? string.Empty))
+            .ForMember(dest => dest.Image, opt => opt.MapFrom(src =>
+            
+                src.Avatar!= null ? src.Avatar.StorageKey : string.Empty
+            ))
             .ForMember(dest => dest.IsBlocked, opt => opt.MapFrom(src => src.IsBlocked));
 
         // Map from Domain User to UserDto (identity-specific fields provided by handlers)

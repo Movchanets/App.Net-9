@@ -28,24 +28,19 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.IdentityUserId == identityUserId);
     }
 
-    public async Task<User> AddAsync(User user)
+    public void Add(User user)
     {
         _db.DomainUsers.Add(user);
-        await _db.SaveChangesAsync();
-        return user;
     }
 
-    public async Task<User> UpdateAsync(User user)
+    public void Update(User user)
     {
         _db.DomainUsers.Update(user);
-        await _db.SaveChangesAsync();
-        return user;
     }
 
-    public async Task DeleteAsync(User user)
+    public void Delete(User user)
     {
         _db.DomainUsers.Remove(user);
-        await _db.SaveChangesAsync();
     }
 
     public async Task<IEnumerable<User>> GetAllAsync()

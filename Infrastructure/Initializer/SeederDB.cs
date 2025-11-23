@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using System.Security.Claims;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
+using Application.Interfaces;
 
 namespace Infrastructure.Initializer;
 
@@ -30,6 +31,7 @@ public static class SeederDB
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<RoleEntity>>();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
         // застосувати міграції (пропустити під час тестування зі SQLite in-memory)
@@ -99,23 +101,35 @@ public static class SeederDB
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(admin, "Qwerty-1!");
-            if (result.Succeeded)
+            using var transaction = await unitOfWork.BeginTransactionAsync();
+            try
             {
-                // Тепер, коли EF згенерував Id для admin, створюємо доменного користувача з цим IdentityUserId
-                var domainAdmin = new User(admin.Id, "Admin", "User");
-                await userRepository.AddAsync(domainAdmin);
-                admin.DomainUserId = domainAdmin.Id;
-                await userManager.UpdateAsync(admin);
-                await userManager.AddToRoleAsync(admin, Roles.Admin);
-                await userManager.AddToRoleAsync(admin, Roles.User);
-            }
-            else
-            {
-                foreach (var error in result.Errors)
+                var result = await userManager.CreateAsync(admin, "Qwerty-1!");
+                if (result.Succeeded)
                 {
-                    Console.WriteLine($"Error: {error.Code} - {error.Description}");
+                    // Тепер, коли EF згенерував Id для admin, створюємо доменного користувача з цим IdentityUserId
+                    var domainAdmin = new User(admin.Id, "Admin", "User", adminEmail );
+                    userRepository.Add(domainAdmin);
+                    admin.DomainUserId = domainAdmin.Id;
+                    await userManager.UpdateAsync(admin);
+                    await userManager.AddToRoleAsync(admin, Roles.Admin);
+                    await userManager.AddToRoleAsync(admin, Roles.User);
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction.CommitAsync();
                 }
+                else
+                {
+                    await transaction.RollbackAsync();
+                    foreach (var error in result.Errors)
+                    {
+                        Console.WriteLine($"Error: {error.Code} - {error.Description}");
+                    }
+                }
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
 
             // створюємо звичайного користувача
@@ -126,24 +140,35 @@ public static class SeederDB
                 UserName = "user",
                 EmailConfirmed = true
             };
-            var result2 = await userManager.CreateAsync(user, "User123!");
-            if (result2.Succeeded)
+            using var transaction2 = await unitOfWork.BeginTransactionAsync();
+            try
             {
-                var domainUser = new User(user.Id, "Regular", "User");
-                await userRepository.AddAsync(domainUser);
-                user.DomainUserId = domainUser.Id;
-                await userManager.UpdateAsync(user);
-                await userManager.AddToRoleAsync(user, Roles.User);
-            }
-            else
-            {
-                foreach (var error in result2.Errors)
+                var result2 = await userManager.CreateAsync(user, "User123!");
+                if (result2.Succeeded)
                 {
-                    Console.WriteLine($"Error: {error.Code} - {error.Description}");
+                    var domainUser = new User(user.Id, "Regular", "User", user.Email);
+                    userRepository.Add(domainUser);
+                    user.DomainUserId = domainUser.Id;
+                    await userManager.UpdateAsync(user);
+                    await userManager.AddToRoleAsync(user, Roles.User);
+                    await unitOfWork.SaveChangesAsync();
+                    await transaction2.CommitAsync();
+                }
+                else
+                {
+                    await transaction2.RollbackAsync();
+                    foreach (var error in result2.Errors)
+                    {
+                        Console.WriteLine($"Error: {error.Code} - {error.Description}");
+                    }
                 }
             }
+            catch
+            {
+                await transaction2.RollbackAsync();
+                throw;
+            }
         }
-        await dbContext.SaveChangesAsync();
 
     }
 }

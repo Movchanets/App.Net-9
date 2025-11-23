@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 import { userApi } from '../api/userApi'
 import type { User } from '../api/userApi'
 import { useAuthStore } from './authStore'
@@ -14,10 +15,18 @@ interface ProfileState {
   updateInfo: (payload: { name?: string; surname?: string; username?: string }) => Promise<User | null>
   updatePhone: (phoneNumber: string) => Promise<User | null>
   updateEmail: (email: string) => Promise<User | null>
+  updateProfile: (payload: Partial<User> & {
+    name?: string
+    surname?: string
+    username?: string
+    phone?: string
+    phoneNumber?: string
+  }) => Promise<User | null>
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>
+  clearProfile: () => void
 }
 
-export const useProfileStore = create<ProfileState>((set) => ({
+export const useProfileStore = create<ProfileState>()(devtools((set) => ({
   profile: null,
   loading: false,
   error: null,
@@ -169,6 +178,10 @@ export const useProfileStore = create<ProfileState>((set) => ({
       return false
     }
   },
-}))
+
+  clearProfile: () => {
+    set({ profile: null, loading: false, error: null })
+  },
+}), { name: 'ProfileStore' }))
 
 export default useProfileStore

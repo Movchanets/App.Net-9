@@ -3,6 +3,7 @@ using Application.DTOs;
 using Application.Interfaces;
 using Application.ViewModels;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Threading;
 using System.Collections.Generic;
@@ -14,12 +15,14 @@ namespace Application.Tests.Commands.User;
 public class UpdateProfileHandlerTests
 {
 	private readonly Mock<IUserService> _identityServiceMock;
+	private readonly Mock<ILogger<UpdateProfileHandler>> _loggerMock;
 	private readonly UpdateProfileHandler _handler;
 
 	public UpdateProfileHandlerTests()
 	{
 		_identityServiceMock = new Mock<IUserService>();
-		_handler = new UpdateProfileHandler(_identityServiceMock.Object);
+		_loggerMock = new Mock<ILogger<UpdateProfileHandler>>();
+		_handler = new UpdateProfileHandler(_identityServiceMock.Object, _loggerMock.Object);
 	}
 
 	[Fact]

@@ -1,5 +1,6 @@
 using System;
 using Domain.Entities;
+using Infrastructure.Configuration;
 using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,18 +21,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 {
     // Domain entities
     public DbSet<User> DomainUsers { get; set; }
+    public DbSet<MediaImage> MediaImages { get; set; }
+    public DbSet<Product> Products { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
+        builder.Entity<MediaImage>(entity =>
+        {
+            entity.ToTable("MediaImages");
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.StorageKey).IsUnique();
+        });
+        var productConfig = new ProductConfiguration();
+        productConfig.Configure(builder.Entity<Product>());
         // Налаштування Domain User
         builder.Entity<User>(user =>
          {
              user.ToTable("DomainUsers");
              user.HasKey(u => u.Id);
 
-             // --- КРИТИЧНЕ ВДОСКОНАЛЕННЯ ---
+
              // Явно вказуємо використовувати послідовний Guid для продуктивності
              user.Property(u => u.Id)
                 .ValueGeneratedOnAdd()
@@ -41,10 +51,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
              user.Property(u => u.Surname).HasMaxLength(100);
              user.Property(u => u.Email).HasMaxLength(100);
              user.Property(u => u.PhoneNumber).HasMaxLength(20);
-             user.Property(u => u.ImageUrl).HasMaxLength(500);
              user.Property(u => u.IsBlocked).IsRequired();
-
              user.HasIndex(u => u.IdentityUserId).IsUnique();
+             user.HasOne(u => u.Avatar)      // Юзер має одну картинку
+                 .WithMany()                 // Картинка не обов'язково знає про Юзера (unidirectional)
+                 .HasForeignKey(u => u.AvatarId)
+                 .OnDelete(DeleteBehavior.SetNull);
          });
 
         // Налаштування ApplicationUser (Identity)

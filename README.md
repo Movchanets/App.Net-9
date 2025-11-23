@@ -15,79 +15,112 @@
 
 ## 1) Налаштування `appsettings` (локально)
 
-У цьому репозиторії є локальні файли конфігурації в `API/` — зазвичай це `API/appsettings.json` та `API/appsettings.Development.json`.
-Зверніть увагу: у файлі `.gitignore` вже є записи, які ігнорують ці файли, наприклад:
+У цьому репозиторії є базовий файл конфігурації `API/appsettings.json` з пустими значеннями для секретів.
+Цей файл є шаблоном — всі чутливі дані (паролі, ключі, токени) потрібно заповнити власними значеннями.
 
-- `API/appsettings.json`
-- `API/appsettings.*.json`
+**Важливо**:
 
-Це означає, що реальні файли з секретами не повинні потрапляти в репозиторій. Для зручності і безпеки нижче я додаю санітизовані версії обох файлів — їх можна використовувати як шаблон (замість секретів підставляйте змінні з `.env` або `user-secrets`).
+- Файл `API/appsettings.json` **включено в репозиторій** як шаблон без секретів
+- Для локальної розробки створіть `API/appsettings.Development.json` з реальними значеннями
+- `appsettings.Development.json` додано до `.gitignore` і не потрапить в репозиторій
+- Альтернативно використовуйте `dotnet user-secrets` або змінні оточення
 
-API/appsettings.json (SANITIZED - секрети видалені/замінені):
+### Базовий `appsettings.json` (шаблон)
 
+Файл `API/appsettings.json` включено в репозиторій з пустими значеннями для всіх секретів.
+Структура файлу містить всі необхідні секції конфігурації:
+
+**Основні секції конфігурації:**
+
+#### JwtSettings
+
+```json
 {
-"Serilog": {
-"Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File" ],
-"MinimumLevel": {
-"Default": "Information",
-"Override": {
-"Microsoft": "Warning",
-"Microsoft.AspNetCore": "Warning",
-"Microsoft.EntityFrameworkCore": "Warning",
-"System": "Warning"
+  "Issuer": "MyAPPServer",
+  "Audience": "MyAPPClient",
+  "AccessTokenSecret": "", // Заповніть сильний секретний ключ (мінімум 32 символи)
+  "RefreshTokenSecret": "", // Заповніть сильний секретний ключ (мінімум 32 символи)
+  "AccessTokenExpirationMinutes": 15,
+  "RefreshTokenExpirationDays": 7
 }
-},
-"WriteTo": [
-{ "Name": "Console", "Args": { "theme": "Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme::Code, Serilog.Sinks.Console", "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}" } },
-{ "Name": "File", "Args": { "path": "logs/log-.txt", "rollingInterval": "Day", "retainedFileCountLimit": 7, "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}" } }
-],
-"Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
-},
-"Logging": {
-"LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" }
-},
-"JwtSettings": {
-"Issuer": "MyAPPServer",
-"Audience": "MyAPPClient",
-"AccessTokenSecret": "<REDACTED:ACCESS_TOKEN_SECRET>",
-"RefreshTokenSecret": "<REDACTED:REFRESH_TOKEN_SECRET>",
-"AccessTokenExpirationMinutes": 15,
-"RefreshTokenExpirationDays": 7
-},
-"SmtpSettings": {
-"Host": "smtp.gmail.com",
-"Port": 587,
-"Username": "<REDACTED:SMTP_USERNAME>",
-"Password": "<REDACTED:SMTP_PASSWORD>",
-"From": "noreply@example.com",
-"EnableSsl": true,
-"FromName": "My App <noreply@example.com>",
-"TemplatePath": "API/EmailTemplates/reset-password.html"
-},
-"ConnectionStrings": {
-"DefaultConnection": "Server=localhost;Port=5432;User Id=postgres;Password=<REDACTED_DB_PASSWORD>;Database=application;"
-},
-"Turnstile": {
-"Secret": "<REDACTED_TURNSTILE_SECRET>"
-},
-"AllowedHosts": "\*"
-}
+```
 
-API/appsettings.Development.json (SANITIZED - секрети видалені/замінені):
+#### SmtpSettings
 
+```json
 {
-"Logging": {
-"LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" }
-},
-"ConnectionStrings": {
-"DefaultConnection": "Server=localhost;Port=5432;User Id=postgres;Password=<REDACTED_DB_PASSWORD>;Database=application;"
-},
-"Turnstile": {
-"Secret": "<REDACTED_TURNSTILE_SECRET>"
+  "Host": "smtp.gmail.com",
+  "Port": 587,
+  "Username": "", // Email для відправки
+  "Password": "", // Пароль додатку Gmail або SMTP пароль
+  "From": "noreply@example.com",
+  "EnableSsl": true
 }
-}
+```
 
-Порада: краще тримати короткі, немасивні налаштування у `appsettings.Development.json` і переносити реальні секрети (паролі, ключі, SMTP-паролі) у `.env` або `dotnet user-secrets`.
+#### ConnectionStrings
+
+```json
+{
+  "DefaultConnection": "" // Рядок підключення до бази даних
+}
+```
+
+Приклад для PostgreSQL: `"Server=localhost;Port=5432;User Id=postgres;Password=YOUR_PASSWORD;Database=application;"`
+
+#### Turnstile (Cloudflare Captcha)
+
+```json
+{
+  "Secret": "" // Cloudflare Turnstile secret key
+}
+```
+
+#### Storage (Зберігання файлів)
+
+Підтримуються різні провайдери: `Local`, `R2`, `S3`, `Azure`, `MinIO`
+
+```json
+{
+  "Provider": "Local", // Оберіть провайдера: Local, R2, S3, Azure, або MinIO
+  "Local": {
+    "FolderName": "uploads" // Папка для локального зберігання
+  }
+  // Для інших провайдерів заповніть відповідні секції
+}
+```
+
+#### AllowedCorsOrigins
+
+```json
+"AllowedCorsOrigins": ""    // URL фронтенду, наприклад: "http://localhost:5173"
+```
+
+### Створення `appsettings.Development.json`
+
+Створіть файл `API/appsettings.Development.json` з реальними значеннями для локальної розробки:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Port=5432;User Id=postgres;Password=YOUR_REAL_PASSWORD;Database=application;"
+  },
+  "JwtSettings": {
+    "AccessTokenSecret": "your-real-access-token-secret-min-32-chars",
+    "RefreshTokenSecret": "your-real-refresh-token-secret-min-32-chars"
+  },
+  "SmtpSettings": {
+    "Username": "your-email@gmail.com",
+    "Password": "your-app-password"
+  },
+  "Turnstile": {
+    "Secret": "your-turnstile-secret"
+  },
+  "AllowedCorsOrigins": "http://localhost:5173"
+}
+```
+
+**Порада**: Для production використовуйте змінні оточення або `dotnet user-secrets` замість зберігання секретів у файлах.
 
 ## 2) Команди для розробки
 

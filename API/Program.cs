@@ -19,6 +19,8 @@ using API.Authorization;
 using Scalar.AspNetCore;
 using Serilog;
 using API.Filters;
+using API.ServiceCollectionExtensions;
+using Infrastructure.Services.Images;
 
 // Початкове базове логування (до налаштування з appsettings)
 Log.Logger = new LoggerConfiguration()
@@ -97,6 +99,8 @@ try
 
     // Repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<IMediaImageRepository, MediaImageRepository>();
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
     builder.Services.AddIdentity<ApplicationUser, RoleEntity>(options =>
         {
@@ -109,6 +113,10 @@ try
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
     // Додаємо політику CORS
+    var allowedOrigins = builder.Configuration["AllowedCorsOrigins"]?
+        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+        ?? new[] { "http://localhost:5173", "http://localhost:5188" };
+    
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -119,7 +127,7 @@ try
         });
         options.AddPolicy("AllowFrontend", policy =>
         {
-            policy.WithOrigins("http://localhost:5173", "http://localhost:5188")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials();
@@ -161,11 +169,26 @@ try
         options.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:AccessTokenSecret"]!));
     });
-
+    // Image service
+    builder.Services.AddScoped<IImageService, ImageSharpService>();
+    // Передаємо builder.Environment у метод розширення
+    builder.Services.AddFileStorage(builder.Configuration, builder.Environment);
+    if (builder.Environment.IsDevelopment())
+    {
+        var contentRoot = builder.Environment.ContentRootPath;
+        var webRoot = Path.Combine(contentRoot, "wwwroot");
+        // Якщо папки немає - створюємо її фізично
+        if (!Directory.Exists(webRoot))
+        {
+            Directory.CreateDirectory(webRoot);
+        }
+    }
     var app = builder.Build();
 
     if (app.Environment.IsDevelopment())
     {
+
+        app.UseStaticFiles();
         app.MapOpenApi();
         app.MapScalarApiReference(options =>
         {

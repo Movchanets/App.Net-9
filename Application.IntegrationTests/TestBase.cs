@@ -3,6 +3,8 @@ using Infrastructure.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Application.Interfaces;
 
 namespace Infrastructure.IntegrationTests;
 
@@ -30,7 +32,8 @@ public abstract class TestBase : IDisposable
         // Налаштовуємо in-memory БД (кожен тест отримує окрему БД)
         var dbName = $"TestDb_{Guid.NewGuid()}"; // Унікальна БД для кожного тесту
         services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase(dbName));
+            options.UseInMemoryDatabase(dbName)
+                   .ConfigureWarnings(warnings => warnings.Ignore(new Microsoft.Extensions.Logging.EventId(1, "TransactionIgnoredWarning"))));
 
         // Налаштовуємо ASP.NET Core Identity (як у реальному додатку)
         // Для тестів замінимо провайдера токенів на простий детермінований провайдер,
@@ -53,8 +56,26 @@ public abstract class TestBase : IDisposable
             opts.Tokens.PasswordResetTokenProvider = SimpleTestTokenProvider<ApplicationUser>.ProviderName;
         });
 
-        // Реєструємо репозиторій та сервіси
+        // Реєструємо репозиторії
         services.AddScoped<Domain.Interfaces.Repositories.IUserRepository, Infrastructure.Repositories.UserRepository>();
+        services.AddScoped<Domain.Interfaces.Repositories.IMediaImageRepository, Infrastructure.Repositories.MediaImageRepository>();
+        services.AddScoped<Application.Interfaces.IUnitOfWork, Infrastructure.Services.UnitOfWork>();
+
+        // Мокаємо IFileStorage та IImageService (не потрібні для більшості тестів)
+        var fileStorageMock = new Mock<IFileStorage>();
+        fileStorageMock.Setup(x => x.UploadAsync(It.IsAny<System.IO.Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("test-storage-key.webp");
+        fileStorageMock.Setup(x => x.GetPublicUrl(It.IsAny<string>()))
+            .Returns<string>(key => $"/uploads/{key}");
+        services.AddSingleton(fileStorageMock.Object);
+
+        var imageServiceMock = new Mock<IImageService>();
+        var processedStream = new System.IO.MemoryStream(new byte[] { 0x52, 0x49, 0x46, 0x46 });
+        imageServiceMock.Setup(x => x.ProcessAsync(It.IsAny<System.IO.Stream>(), It.IsAny<ImageResizeMode>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProcessedImageResult(processedStream, "image/webp", ".webp", 256, 256));
+        services.AddSingleton(imageServiceMock.Object);
+
+        // Реєструємо UserService
         services.AddScoped<Application.Interfaces.IUserService, Infrastructure.Services.UserService>();
 
         // Будуємо ServiceProvider (контейнер залежностей)

@@ -5,10 +5,11 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea/
 logs/
-API/appsettings.json
+
 API/appsettings.*.json
 *.DotSettings.user
 *.md
 !/README.md
 .cursor/
 Front/.env
+API/wwwroot/
