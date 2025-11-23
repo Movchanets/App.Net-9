@@ -30,5 +30,6 @@ public interface IUserService
 	Task<UserDto?> GetIdentityInfoByEmailAsync(string email);
 	Task<List<UserDto>> GetAllUsersAsync();
 	Task<UserDto?> UpdateProfilePictureAsync(Guid identityUserId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default);
+	Task<UserDto?> DeleteProfilePictureAsync(Guid identityUserId, CancellationToken cancellationToken = default);
 
 }

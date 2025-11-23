@@ -182,6 +182,36 @@
 
   "common": {
     "email": "E-mail",
-    "empty": "empty"
+    "empty": "empty",
+    "user": "User"
+  },
+
+  "notfound": {
+    "title": "404 - Page not found",
+    "description": "Sorry, the page you are looking for does not exist or has been removed.",
+    "go_home": "Go home",
+    "go_back": "Go back"
+  },
+
+  "errors": {
+    "access_denied": "Access denied",
+    "insufficient_permissions": "You do not have sufficient permissions to view this page.",
+    "fetch_failed": "Failed to fetch data",
+    "save_failed": "Failed to save"
+  },
+
+  "profile": {
+    "picture": "Profile picture",
+    "upload_picture": "Upload picture",
+    "change_picture": "Change picture",
+    "delete_picture": "Delete picture",
+    "crop_image": "Crop image",
+    "zoom": "Zoom",
+    "save_image": "Save",
+    "uploading": "Uploading...",
+    "deleting": "Deleting...",
+    "picture_updated": "Profile picture updated",
+    "picture_deleted": "Profile picture deleted",
+    "select_image": "Select image"
   }
 }

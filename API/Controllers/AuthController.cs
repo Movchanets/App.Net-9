@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
 	[HttpGet("test-tokens")]
 	public async Task<IActionResult> GetTokensTest()
 	{
-		var user = await _userManager.FindByIdAsync("1");
+		var user = await _userManager.FindByEmailAsync("admin@example.com");
 		if (user == null) return NotFound("User not found");
 		var tokens = await _tokenService.GenerateTokensAsync(user.Id);
 		return Ok(tokens);

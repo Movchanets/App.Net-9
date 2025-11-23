@@ -60,16 +60,16 @@ public class GetUserByEmailQueryHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue();
         result.Message.Should().Be("User retrieved successfully");
-        result.Payload.Should().BeOfType<UserVM>(); // Payload містить UserVM
+        result.Payload.Should().BeOfType<UserDto>(); // Payload містить UserDto
 
-        // Перевіряємо дані в UserVM
-        var userVM = result.Payload as UserVM;
-        userVM.Should().NotBeNull();
-        userVM.Id.Should().NotBe(Guid.Empty);
-        userVM.UserName.Should().Be("testuser");
-        userVM.Email.Should().Be(email);
-        userVM.UserRoles.Should().HaveCount(2); // 2 ролі
-        userVM.UserRoles.Should().Contain(new[] { "User", "Admin" });
+        // Перевіряємо дані в UserDto
+        var userDto = result.Payload;
+        userDto.Should().NotBeNull();
+        userDto.Id.Should().NotBe(Guid.Empty);
+        userDto.Username.Should().Be("testuser");
+        userDto.Email.Should().Be(email);
+        userDto.Roles.Should().HaveCount(2); // 2 ролі
+        userDto.Roles.Should().Contain(new[] { "User", "Admin" });
 
         // Перевіряємо, що метод був викликаний правильно
         _identityServiceMock.Verify(x => x.GetIdentityInfoByEmailAsync(email), Times.Once);
@@ -136,9 +136,9 @@ public class GetUserByEmailQueryHandlerTests
         result.Should().NotBeNull();
         result.IsSuccess.Should().BeTrue(); // Операція успішна
 
-        var userVM = result.Payload as UserVM;
-        userVM.Should().NotBeNull();
-        userVM.UserRoles.Should().BeEmpty(); // Список ролей порожній
+        var userDto = result.Payload;
+        userDto.Should().NotBeNull();
+        userDto.Roles.Should().BeEmpty(); // Список ролей порожній
     }
 
     /// <summary>

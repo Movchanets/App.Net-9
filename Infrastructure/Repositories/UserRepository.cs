@@ -19,12 +19,15 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByIdAsync(Guid id)
     {
-        return await _db.DomainUsers.FindAsync(id);
+        return await _db.DomainUsers
+            .Include(u => u.Avatar)
+            .FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<User?> GetByIdentityUserIdAsync(Guid identityUserId)
     {
         return await _db.DomainUsers
+            .Include(u => u.Avatar)
             .FirstOrDefaultAsync(u => u.IdentityUserId == identityUserId);
     }
 
@@ -45,6 +48,8 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetAllAsync()
     {
-        return await _db.DomainUsers.ToListAsync();
+        return await _db.DomainUsers
+            .Include(u => u.Avatar)
+            .ToListAsync();
     }
 }

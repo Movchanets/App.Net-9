@@ -202,6 +202,25 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Видалення фото профілю поточного користувача
+    /// </summary>
+    [HttpDelete("me/picture")]
+    [Authorize(Policy = "Permission:profile.update.self")]
+    public async Task<IActionResult> DeleteProfilePicture()
+    {
+        var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
+        if (!Guid.TryParse(idClaim, out var userId)) return Unauthorized();
+
+        _logger.LogInformation("User {UserId} is deleting profile picture", userId);
+
+        var result = await _mediator.Send(new Application.Commands.User.Profile.DeleteProfilePicture.DeleteProfilePictureCommand(userId));
+
+        if (!result.IsSuccess) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Видалення користувача
     /// </summary>
     [HttpDelete("{id}")]

@@ -1,5 +1,6 @@
 # App.Net-9 — Інструкція для запуску
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Movchanets/App.Net-9)
 Короткий посібник для запуску проекту локально, створення власних `.env` файлів та налаштування `appsettings`.
 
 ## Вимоги
