@@ -1,11 +1,11 @@
-using Application.ViewModels;
+using Application.DTOs;
 using FluentValidation;
 
 namespace Application.Validators;
 
-public class UpdateUserVMValidator : AbstractValidator<UpdateUserVM>
+public class UpdateUserDtoValidator : AbstractValidator<UpdateUserDto>
 {
-	public UpdateUserVMValidator()
+	public UpdateUserDtoValidator()
 	{
 		RuleFor(x => x.Email)
 			.EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email))
@@ -13,6 +13,6 @@ public class UpdateUserVMValidator : AbstractValidator<UpdateUserVM>
 
 		RuleFor(x => x.Name).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.Name));
 		RuleFor(x => x.Surname).MaximumLength(50).When(x => !string.IsNullOrWhiteSpace(x.Surname));
-		
+
 	}
 }

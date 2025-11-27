@@ -1,7 +1,6 @@
 using System;
 using Application.Interfaces;
 using Application.DTOs;
-using Application.ViewModels;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
@@ -101,7 +100,7 @@ public class UserService : IUserService
 	}
 
 	public async Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(
-		RegistrationVM registrationModel)
+		RegistrationDto registrationModel)
 	{
 		using var transaction = await _unitOfWork.BeginTransactionAsync();
 		try

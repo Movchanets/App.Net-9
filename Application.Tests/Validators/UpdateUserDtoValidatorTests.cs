@@ -1,18 +1,18 @@
+using Application.DTOs;
 using Application.Validators;
-using Application.ViewModels;
 using FluentAssertions;
 using Xunit;
 
 namespace Application.Tests.Validators;
 
-public class UpdateUserVMValidatorTests
+public class UpdateUserDtoValidatorTests
 {
-	private readonly UpdateUserVMValidator _validator = new UpdateUserVMValidator();
+	private readonly UpdateUserDtoValidator _validator = new UpdateUserDtoValidator();
 
 	[Fact]
 	public void Validate_ValidModel_NoErrors()
 	{
-		var vm = new UpdateUserVM
+		var vm = new UpdateUserDto
 		{
 			Name = "John",
 			Surname = "Doe",
@@ -26,11 +26,11 @@ public class UpdateUserVMValidatorTests
 	[Fact]
 	public void Validate_InvalidEmail_ReturnsError()
 	{
-		var vm = new UpdateUserVM { Email = "not-an-email" };
+		var vm = new UpdateUserDto { Email = "not-an-email" };
 		var result = _validator.Validate(vm);
 		result.IsValid.Should().BeFalse();
 		result.Errors.Should().ContainSingle(e => e.PropertyName == "Email");
 	}
 
-	
+
 }

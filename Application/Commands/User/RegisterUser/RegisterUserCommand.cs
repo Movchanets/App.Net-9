@@ -1,6 +1,6 @@
-using Application.ViewModels;
+using Application.DTOs;
 using MediatR;
 
 namespace Application.Commands.User.RegisterUser;
 
-public record RegisterUserCommand(RegistrationVM data ) : IRequest<ServiceResponse>;
+public record RegisterUserCommand(RegistrationDto data) : IRequest<ServiceResponse>;

@@ -1,6 +1,6 @@
 using Application.Commands.User.Profile.UpdateProfileInfo;
+using Application.DTOs;
 using Application.Validators;
-using Application.ViewModels;
 using FluentAssertions;
 using System;
 using Xunit;
@@ -14,7 +14,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	[Fact]
 	public void Validate_ValidUsername_PassesValidation()
 	{
-		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoVM { Username = "john.doe" });
+		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoDto { Username = "john.doe" });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeTrue();
 	}
@@ -26,7 +26,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	[InlineData("user name")] // space not allowed
 	public void Validate_InvalidUsername_FailsValidation(string username)
 	{
-		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoVM { Username = username });
+		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoDto { Username = username });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 	}
@@ -34,7 +34,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	[Fact]
 	public void Validate_NullUsername_PassesValidation()
 	{
-		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoVM { Username = null });
+		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), new UpdateProfileInfoDto { Username = null });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeTrue();
 	}
@@ -43,7 +43,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	public void Validate_NameTooLong_FailsValidation()
 	{
 		var longName = new string('a', 51);
-		var vm = new UpdateProfileInfoVM { Name = longName };
+		var vm = new UpdateProfileInfoDto { Name = longName };
 		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), vm);
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
@@ -54,7 +54,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	public void Validate_SurnameTooLong_FailsValidation()
 	{
 		var longSurname = new string('b', 51);
-		var vm = new UpdateProfileInfoVM { Surname = longSurname };
+		var vm = new UpdateProfileInfoDto { Surname = longSurname };
 		var command = new UpdateProfileInfoCommand(Guid.NewGuid(), vm);
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
@@ -64,7 +64,7 @@ public class UpdateProfileInfoCommandValidatorTests
 	[Fact]
 	public void Validate_AllFieldsValid_PassesValidation()
 	{
-		var vm = new UpdateProfileInfoVM
+		var vm = new UpdateProfileInfoDto
 		{
 			Name = "John",
 			Surname = "Doe",

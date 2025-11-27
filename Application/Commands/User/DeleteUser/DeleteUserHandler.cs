@@ -1,6 +1,6 @@
-using MediatR;
-using Application.ViewModels;
+using Application.DTOs;
 using Application.Interfaces;
+using MediatR;
 
 namespace Application.Commands.User.DeleteUser;
 

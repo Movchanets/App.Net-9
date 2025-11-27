@@ -1,5 +1,5 @@
+using Application.DTOs;
 using MediatR;
-using Application.ViewModels;
 
 namespace Application.Commands.User.DeleteUser;
 

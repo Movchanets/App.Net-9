@@ -1,7 +1,6 @@
 using System;
 using Domain.Entities;
 using Application.DTOs;
-using Application.ViewModels;
 
 namespace Application.Interfaces;
 
@@ -15,7 +14,7 @@ public interface IUserService
 	Task<bool> DeleteUserByIdAsync(Guid id);
 	Task<bool> EmailExistsAsync(string email);
 	Task<UserDto?> GetIdentityInfoByIdAsync(Guid identityUserId);
-	Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(RegistrationVM registrationModel);
+	Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(RegistrationDto registrationModel);
 	Task<bool> EnsureRoleExistsAsync(string roleName);
 	Task<bool> AddUserToRoleAsync(Guid identityUserId, string roleName);
 	Task<string?> GeneratePasswordResetTokenAsync(string email);

@@ -1,11 +1,11 @@
-using Application.ViewModels;
+using Application.DTOs;
 using FluentValidation;
 
 namespace Application.Validators;
 
-public class ChangePasswordVMValidator : AbstractValidator<ChangePasswordVM>
+public class ChangePasswordDtoValidator : AbstractValidator<ChangePasswordDto>
 {
-	public ChangePasswordVMValidator()
+	public ChangePasswordDtoValidator()
 	{
 		RuleFor(x => x.CurrentPassword).NotEmpty().WithMessage("Current password is required");
 		RuleFor(x => x.NewPassword).NotEmpty().MinimumLength(6).WithMessage("New password must be at least 6 characters");

@@ -1,5 +1,5 @@
+using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using Domain.Constants;
 using FluentAssertions;
 using Moq;
@@ -34,7 +34,7 @@ public class RegisterUserHandlerTests
     public async Task Handle_WhenUserCreationSucceeds_ShouldReturnSuccessResponse()
     {
         // Arrange - підготовка даних реєстрації
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -46,7 +46,7 @@ public class RegisterUserHandlerTests
 
         // Налаштовуємо mock: реєстрація успішна
         var newId = Guid.NewGuid();
-        
+
         _identityServiceMock
             .Setup(x => x.RegisterAsync(registrationData))
             .ReturnsAsync((true, new List<string>(), newId));
@@ -79,7 +79,7 @@ public class RegisterUserHandlerTests
     public async Task Handle_WhenUserCreationFails_ShouldReturnFailureResponse()
     {
         // Arrange - дані з недопустимим паролем
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -116,7 +116,7 @@ public class RegisterUserHandlerTests
     public async Task Handle_WhenRoleDoesNotExist_ShouldCreateRole()
     {
         // Arrange
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",

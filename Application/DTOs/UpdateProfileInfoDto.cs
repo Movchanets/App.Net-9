@@ -1,6 +1,6 @@
-namespace Application.ViewModels;
+namespace Application.DTOs;
 
-public record UpdateProfileInfoVM
+public record UpdateProfileInfoDto
 {
 	public string? Name { get; init; }
 	public string? Surname { get; init; }

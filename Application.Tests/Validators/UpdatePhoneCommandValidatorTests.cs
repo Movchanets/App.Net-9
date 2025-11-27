@@ -1,6 +1,6 @@
 using Application.Commands.User.Profile.UpdatePhone;
+using Application.DTOs;
 using Application.Validators;
-using Application.ViewModels;
 using FluentAssertions;
 using System;
 using Xunit;
@@ -18,7 +18,7 @@ public class UpdatePhoneCommandValidatorTests
 	[InlineData("(123) 456 7890")]
 	public void Validate_ValidPhoneNumber_PassesValidation(string phone)
 	{
-		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneVM { PhoneNumber = phone });
+		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneDto { PhoneNumber = phone });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeTrue();
 	}
@@ -30,7 +30,7 @@ public class UpdatePhoneCommandValidatorTests
 	[InlineData("abc123456789")] // letters
 	public void Validate_InvalidPhoneNumber_FailsValidation(string phone)
 	{
-		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneVM { PhoneNumber = phone });
+		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneDto { PhoneNumber = phone });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 	}
@@ -38,7 +38,7 @@ public class UpdatePhoneCommandValidatorTests
 	[Fact]
 	public void Validate_EmptyPhoneNumber_ReturnsRequiredError()
 	{
-		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneVM { PhoneNumber = "" });
+		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneDto { PhoneNumber = "" });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 		result.Errors.Should().Contain(e => e.ErrorMessage.Contains("required"));
@@ -47,7 +47,7 @@ public class UpdatePhoneCommandValidatorTests
 	[Fact]
 	public void Validate_InvalidFormat_ReturnsFormatError()
 	{
-		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneVM { PhoneNumber = "abc" });
+		var command = new UpdatePhoneCommand(Guid.NewGuid(), new UpdatePhoneDto { PhoneNumber = "abc" });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 		result.Errors.Should().Contain(e => e.ErrorMessage.Contains("Invalid phone number format"));

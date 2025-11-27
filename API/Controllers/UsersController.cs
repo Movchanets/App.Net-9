@@ -1,5 +1,6 @@
 using System;
 using System.Security.Claims;
+using Application.DTOs;
 using Application.Queries.User;
 using Application.Queries.User.GetUserByEmail;
 using Application.Queries.User.GetUserById;
@@ -12,7 +13,6 @@ using API.Filters;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Application.Commands.User.DeleteUser;
-using Application.ViewModels;
 using Application.Queries.User.GetProfile;
 using Application.Commands.User.Profile.UpdateProfile;
 using Application.Commands.User.Profile.ChangePassword;
@@ -96,7 +96,7 @@ public class UsersController : ControllerBase
     [Obsolete("Use /me/info, /me/phone, or /me/email instead")]
     [HttpPut("me")]
     [Authorize(Policy = "Permission:profile.update.self")]
-    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileVM data)
+    public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateProfileDto data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
@@ -112,7 +112,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpPut("me/phone")]
     [Authorize(Policy = "Permission:profile.update.self")]
-    public async Task<IActionResult> UpdateMyPhone([FromBody] UpdatePhoneVM data)
+    public async Task<IActionResult> UpdateMyPhone([FromBody] UpdatePhoneDto data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
@@ -128,7 +128,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpPut("me/email")]
     [Authorize(Policy = "Permission:profile.update.self")]
-    public async Task<IActionResult> UpdateMyEmail([FromBody] UpdateEmailVM data)
+    public async Task<IActionResult> UpdateMyEmail([FromBody] UpdateEmailDto data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
@@ -144,7 +144,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpPut("me/info")]
     [Authorize(Policy = "Permission:profile.update.self")]
-    public async Task<IActionResult> UpdateMyInfo([FromBody] UpdateProfileInfoVM data)
+    public async Task<IActionResult> UpdateMyInfo([FromBody] UpdateProfileInfoDto data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();
@@ -160,7 +160,7 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpPut("me/password")]
     [Authorize(Policy = "Permission:profile.update.self")]
-    public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordVM data)
+    public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordDto data)
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(idClaim)) return Unauthorized();

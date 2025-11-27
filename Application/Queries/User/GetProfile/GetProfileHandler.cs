@@ -1,5 +1,4 @@
 using Application.DTOs;
-using Application.ViewModels;
 using MediatR;
 using Application.Interfaces;
 using Domain.Interfaces.Repositories;

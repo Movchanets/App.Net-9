@@ -1,4 +1,4 @@
-namespace Application.ViewModels;
+namespace Application.DTOs;
 
 /// <summary>
 /// Generic-версія для відповіді сервісу, що несе дані типу <T>
@@ -13,13 +13,13 @@ public record ServiceResponse : ServiceResponse<object>
     /// <summary>
     /// Конструктор для випадків, коли payload НЕ потрібен (успіх/невдача без даних).
     /// </summary>
-    public ServiceResponse(bool isSuccess, string message) 
+    public ServiceResponse(bool isSuccess, string message)
         : base(isSuccess, message, null) { }
 
     /// <summary>
     /// НОВИЙ: Конструктор для випадків, коли payload ПОТРІБЕН.
     /// (Наприклад, передача списку помилок).
     /// </summary>
-    public ServiceResponse(bool isSuccess, string message, object? payload) 
+    public ServiceResponse(bool isSuccess, string message, object? payload)
         : base(isSuccess, message, payload) { }
 }

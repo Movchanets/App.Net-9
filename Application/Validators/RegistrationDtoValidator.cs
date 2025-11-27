@@ -1,11 +1,11 @@
-using Application.ViewModels;
+using Application.DTOs;
 using FluentValidation;
 
 namespace Application.Validators;
 
-public class RegistrationVMValidator : AbstractValidator<RegistrationVM>
+public class RegistrationDtoValidator : AbstractValidator<RegistrationDto>
 {
-	public RegistrationVMValidator()
+	public RegistrationDtoValidator()
 	{
 		// Validate presence first, then validate format only when present to avoid duplicate errors
 		RuleFor(x => x.Email)

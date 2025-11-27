@@ -1,5 +1,5 @@
+using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using Domain.Constants;
 using MediatR;
 

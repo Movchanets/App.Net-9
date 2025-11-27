@@ -1,7 +1,6 @@
 using Application.Commands.User.Profile.UpdatePhone;
 using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -27,7 +26,7 @@ public class UpdatePhoneHandlerTests
 			.ReturnsAsync(dto);
 
 		var handler = new UpdatePhoneHandler(_identityServiceMock.Object, _loggerMock.Object);
-		var result = await handler.Handle(new UpdatePhoneCommand(id, new UpdatePhoneVM { PhoneNumber = "+3800000000" }), CancellationToken.None);
+		var result = await handler.Handle(new UpdatePhoneCommand(id, new UpdatePhoneDto { PhoneNumber = "+3800000000" }), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
 		result.Payload!.PhoneNumber.Should().Be("+3800000000");
@@ -42,7 +41,7 @@ public class UpdatePhoneHandlerTests
 			.ReturnsAsync((UserDto?)null);
 
 		var handler = new UpdatePhoneHandler(_identityServiceMock.Object, _loggerMock.Object);
-		var result = await handler.Handle(new UpdatePhoneCommand(id, new UpdatePhoneVM { PhoneNumber = "+380" }), CancellationToken.None);
+		var result = await handler.Handle(new UpdatePhoneCommand(id, new UpdatePhoneDto { PhoneNumber = "+380" }), CancellationToken.None);
 
 		result.IsSuccess.Should().BeFalse();
 	}

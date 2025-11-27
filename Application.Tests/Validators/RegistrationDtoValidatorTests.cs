@@ -1,18 +1,18 @@
+using Application.DTOs;
 using Application.Validators;
-using Application.ViewModels;
 using FluentAssertions;
 using Xunit;
 
 namespace Application.Tests.Validators;
 
-public class RegistrationVMValidatorTests
+public class RegistrationDtoValidatorTests
 {
-	private readonly RegistrationVMValidator _validator = new RegistrationVMValidator();
+	private readonly RegistrationDtoValidator _validator = new RegistrationDtoValidator();
 
 	[Fact]
 	public void Validate_ValidModel_NoErrors()
 	{
-		var vm = new RegistrationVM
+		var vm = new RegistrationDto
 		{
 			Email = "user@example.com",
 			Name = "John",
@@ -28,7 +28,7 @@ public class RegistrationVMValidatorTests
 	[Fact]
 	public void Validate_MissingEmail_ReturnsError()
 	{
-		var vm = new RegistrationVM
+		var vm = new RegistrationDto
 		{
 			Email = "",
 			Name = "John",
@@ -45,7 +45,7 @@ public class RegistrationVMValidatorTests
 	[Fact]
 	public void Validate_PasswordsDoNotMatch_ReturnsError()
 	{
-		var vm = new RegistrationVM
+		var vm = new RegistrationDto
 		{
 			Email = "user@example.com",
 			Name = "John",
