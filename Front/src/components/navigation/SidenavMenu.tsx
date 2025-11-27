@@ -77,7 +77,7 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
         <div className="mb-6 flex items-center gap-3">
           <div className="h-12 w-12 shrink-0 rounded-full bg-surface/80 flex items-center justify-center text-lg font-semibold">
               {(() => {
-                const img = user?.picture
+                const img = user?.avatarUrl
                 return img ? (
                   <img src={img} alt={user?.name ?? 'avatar'} className="h-12 w-12 rounded-full object-cover" />
                 ) : (
