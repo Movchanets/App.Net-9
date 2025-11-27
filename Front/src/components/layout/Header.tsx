@@ -55,7 +55,7 @@ export function Header() {
                     >
                       <span className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-surface-card text-sm font-medium ring-1 ring-white/10">
                         {(() => {
-                          const img = user?.picture
+                          const img = user?.avatarUrl
                           return img ? (
                             <img src={img} alt={user?.name ?? 'avatar'} className="h-9 w-9 rounded-full object-cover" />
                           ) : (

@@ -46,6 +46,8 @@ try
 
     // Controllers
     builder.Services.AddControllers();
+    // HttpContextAccessor для доступу до HttpContext в сервісах
+    builder.Services.AddHttpContextAccessor();
     // Application services (validators, MediatR behaviors, etc.)
     builder.Services.AddApplicationServices();
 
@@ -116,7 +118,7 @@ try
     var allowedOrigins = builder.Configuration["AllowedCorsOrigins"]?
         .Split(',', StringSplitOptions.RemoveEmptyEntries)
         ?? new[] { "http://localhost:5173", "http://localhost:5188" };
-    
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>

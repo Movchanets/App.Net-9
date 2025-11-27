@@ -1,6 +1,5 @@
 using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

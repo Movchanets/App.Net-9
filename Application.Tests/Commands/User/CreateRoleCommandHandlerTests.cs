@@ -1,7 +1,7 @@
 using Application.Commands.User;
 using Application.Commands.User.CreateRole;
+using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using FluentAssertions;
 using Moq;
 

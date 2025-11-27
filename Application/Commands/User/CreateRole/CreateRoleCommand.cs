@@ -1,4 +1,4 @@
-using Application.ViewModels;
+using Application.DTOs;
 using MediatR;
 
 namespace Application.Commands.User;

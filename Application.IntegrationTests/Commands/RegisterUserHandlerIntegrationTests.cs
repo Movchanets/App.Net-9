@@ -1,5 +1,5 @@
 using Application.Commands.User.RegisterUser;
-using Application.ViewModels;
+using Application.DTOs;
 using FluentAssertions;
 using Domain.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +24,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
     public async Task Handle_ShouldCreateUserInDatabase()
     {
         // Arrange
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -61,7 +61,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
     public async Task Handle_ShouldAssignUserRole()
     {
         // Arrange
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -98,7 +98,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         var rolesBefore = await DbContext.Roles.ToListAsync();
         rolesBefore.Should().BeEmpty();
 
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -124,7 +124,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
     public async Task Handle_WithWeakPassword_ShouldNotCreateUser()
     {
         // Arrange - слабкий пароль (не відповідає вимогам Identity)
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -155,7 +155,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
     public async Task Handle_WithDuplicateEmail_ShouldReturnError()
     {
         // Arrange - спочатку створюємо користувача
-        var firstRegistration = new RegistrationVM
+        var firstRegistration = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -166,7 +166,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
         await _handler.Handle(new RegisterUserCommand(firstRegistration), CancellationToken.None);
 
         // Намагаємось створити другого з таким же email
-        var secondRegistration = new RegistrationVM
+        var secondRegistration = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",
@@ -193,7 +193,7 @@ public class RegisterUserHandlerIntegrationTests : TestBase
     {
         // Arrange
         var password = "MySecretPassword123!";
-        var registrationData = new RegistrationVM
+        var registrationData = new RegistrationDto
         {
             Name = "John",
             Surname = "Doe",

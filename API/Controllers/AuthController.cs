@@ -7,7 +7,6 @@ using Application.Commands.User.ResetPassword;
 using Application.Commands.User.SendTestEmail;
 using Application.Queries.User.CheckEmail;
 using Application.DTOs;
-using Application.ViewModels;
 using Application.Interfaces;
 using Application.Models;
 using Infrastructure.Entities.Identity;
@@ -39,7 +38,7 @@ public class AuthController : ControllerBase
 	[HttpGet("test-tokens")]
 	public async Task<IActionResult> GetTokensTest()
 	{
-		var user = await _userManager.FindByIdAsync("1");
+		var user = await _userManager.FindByEmailAsync("admin@example.com");
 		if (user == null) return NotFound("User not found");
 		var tokens = await _tokenService.GenerateTokensAsync(user.Id);
 		return Ok(tokens);
@@ -81,7 +80,7 @@ public class AuthController : ControllerBase
 
 	[AllowAnonymous]
 	[HttpPost("register")]
-	public async Task<IActionResult> CreateUser([FromBody] RegistrationVM request)
+	public async Task<IActionResult> CreateUser([FromBody] RegistrationDto request)
 	{
 		_logger.LogInformation("Creating new user with email: {Email}", request.Email);
 

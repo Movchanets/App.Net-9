@@ -1,6 +1,6 @@
-namespace Application.ViewModels;
+namespace Application.DTOs;
 
-public record UpdatePhoneVM
+public record UpdatePhoneDto
 {
 	public string PhoneNumber { get; init; } = string.Empty;
 }

@@ -9,6 +9,7 @@ export interface User {
   surname?: string
   phoneNumber?: string
   roles: string[]
+  avatarUrl?: string
   [key: string]: unknown
 }
 
@@ -75,5 +76,23 @@ export const userApi = {
     const res = response.data
     if (!res || !res.isSuccess) throw new Error(res?.message || 'Failed to change password')
     return true
+  },
+
+  // Upload profile picture
+  uploadProfilePicture: async (file: File): Promise<User> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await axiosClient.post<ServiceResponse<User>>('/users/me/picture', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return unwrapServiceResponse(response.data)
+  },
+
+  // Delete profile picture
+  deleteProfilePicture: async (): Promise<User> => {
+    const response = await axiosClient.delete<ServiceResponse<User>>('/users/me/picture')
+    return unwrapServiceResponse(response.data)
   },
 }

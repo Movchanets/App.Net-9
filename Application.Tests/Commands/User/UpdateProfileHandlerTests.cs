@@ -1,7 +1,6 @@
 using Application.Commands.User.Profile.UpdateProfile;
 using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -33,7 +32,7 @@ public class UpdateProfileHandlerTests
 		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", "New", null))
 			.ReturnsAsync(updatedInfo);
 
-		var vm = new UpdateProfileVM { Username = "newname", Name = "New" };
+		var vm = new UpdateProfileDto { Username = "newname", Name = "New" };
 		var result = await _handler.Handle(new UpdateProfileCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
@@ -48,7 +47,7 @@ public class UpdateProfileHandlerTests
 		_identityServiceMock.Setup(x => x.UpdateIdentityProfileAsync(id, "newname", null, null))
 			.ReturnsAsync((UserDto?)null);
 
-		var vm = new UpdateProfileVM { Username = "newname" };
+		var vm = new UpdateProfileDto { Username = "newname" };
 		var result = await _handler.Handle(new UpdateProfileCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeFalse();

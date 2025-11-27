@@ -8,7 +8,7 @@ export interface User {
   name: string
   firstName?: string
   lastName?: string
-  picture?: string
+  avatarUrl?: string
   roles?: string[]
   permissions?: string[]
 }
@@ -30,6 +30,14 @@ export const useAuthStore = create<AuthState>()(devtools((set) => {
   const claims = storedToken ? parseJwt(storedToken) : null
   const c = claims as Record<string, unknown> | null
 
+  const extractAvatarUrl = (c: Record<string, unknown> | null): string | undefined => {
+    if (!c) return undefined
+    const rawValue = c['avatarUrl'] || c['picture'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto']
+    if (!rawValue) return undefined
+    // Handle both string and array (in case of duplicate claims)
+    return Array.isArray(rawValue) ? String(rawValue[0]) : String(rawValue)
+  }
+
   const initialUser = c
     ? {
         id: String(
@@ -43,7 +51,7 @@ export const useAuthStore = create<AuthState>()(devtools((set) => {
         name: String(c['name'] || c['preferred_username'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || ''),
         firstName: c['given_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'] ? String(c['given_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) : undefined,
         lastName: c['family_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'] ? String(c['family_name'] || c['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname']) : undefined,
-        picture: c['picture'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto'] ? String(c['picture'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto']) : undefined,
+        avatarUrl: extractAvatarUrl(c),
         roles: toArray(c['role'] || c['roles'] || c['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']),
         permissions: toArray(c['permission'] || c['permissions'])
       }
@@ -81,7 +89,7 @@ export const useAuthStore = create<AuthState>()(devtools((set) => {
               name: String(c2['name'] || c2['preferred_username'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] || ''),
               firstName: c2['given_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'] ? String(c2['given_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname']) : undefined,
               lastName: c2['family_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname'] ? String(c2['family_name'] || c2['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname']) : undefined,
-              picture: c2['picture'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto'] ? String(c2['picture'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/thumbnailphoto']) : undefined,
+              avatarUrl: extractAvatarUrl(c2),
               roles: toArray(c2['role'] || c2['roles'] || c2['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']),
               permissions: toArray(c2['permission'] || c2['permissions'])
             }

@@ -1,7 +1,7 @@
 using System;
 using Application.Interfaces;
 using Application.DTOs;
-using Application.ViewModels;
+using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using Infrastructure.Data.Constants;
@@ -20,6 +20,7 @@ public class UserService : IUserService
 	private readonly IImageService _imageService;
 	private readonly IMediaImageRepository _mediaImageRepository;
 	private readonly IUnitOfWork _unitOfWork;
+	private readonly IMapper _mapper;
 
 	public UserService(
 		UserManager<ApplicationUser> userManager,
@@ -28,7 +29,8 @@ public class UserService : IUserService
 		IFileStorage fileStorage,
 		IImageService imageService,
 		IMediaImageRepository mediaImageRepository,
-		IUnitOfWork unitOfWork)
+		IUnitOfWork unitOfWork,
+		IMapper mapper)
 	{
 		_userManager = userManager;
 		_roleManager = roleManager;
@@ -37,6 +39,7 @@ public class UserService : IUserService
 		_imageService = imageService;
 		_mediaImageRepository = mediaImageRepository;
 		_unitOfWork = unitOfWork;
+		_mapper = mapper;
 	}
 
 	public async Task<bool> ValidatePasswordAsync(string email, string password)
@@ -97,7 +100,7 @@ public class UserService : IUserService
 	}
 
 	public async Task<(bool Succeeded, List<string> Errors, Guid? IdentityUserId)> RegisterAsync(
-		RegistrationVM registrationModel)
+		RegistrationDto registrationModel)
 	{
 		using var transaction = await _unitOfWork.BeginTransactionAsync();
 		try
@@ -319,26 +322,7 @@ public class UserService : IUserService
 			await _unitOfWork.SaveChangesAsync();
 			await transaction.CommitAsync();
 
-			var roles = (await _userManager.GetRolesAsync(user)).ToList();
-			var name = domain?.Name ?? string.Empty;
-			var surname = domain?.Surname ?? string.Empty;
-
-			string? avatarUrl = null;
-			if (domain?.Avatar != null && !string.IsNullOrWhiteSpace(domain.Avatar.StorageKey))
-			{
-				avatarUrl = _fileStorage.GetPublicUrl(domain.Avatar.StorageKey);
-			}
-
-			return new UserDto(
-				user.Id,
-				user.UserName ?? string.Empty,
-				firstName ?? name,
-				lastName ?? surname,
-				user.Email ?? string.Empty,
-				user.PhoneNumber ?? string.Empty,
-				roles,
-				avatarUrl
-			);
+			return await TryBuildUserDtoAsync(user);
 		}
 		catch
 		{
@@ -409,11 +393,51 @@ public class UserService : IUserService
 		}
 	}
 
+	public async Task<UserDto?> DeleteProfilePictureAsync(Guid identityUserId, CancellationToken cancellationToken = default)
+	{
+		using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+		try
+		{
+			var user = await _userManager.FindByIdAsync(identityUserId.ToString());
+			if (user == null) return null;
+
+			var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
+			if (domain == null) return null;
+
+			// Delete file from storage if exists
+			if (domain.Avatar != null && !string.IsNullOrWhiteSpace(domain.Avatar.StorageKey))
+			{
+				try
+				{
+					await _fileStorage.DeleteAsync(domain.Avatar.StorageKey, cancellationToken);
+				}
+				catch
+				{
+					// Log but don't fail if file deletion fails
+				}
+
+				// Remove avatar reference
+				domain.RemoveAvatar();
+				_userRepository.Update(domain);
+			}
+
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
+			await transaction.CommitAsync(cancellationToken);
+			return await TryBuildUserDtoAsync(user);
+		}
+		catch
+		{
+			await transaction.RollbackAsync(cancellationToken);
+			throw;
+		}
+	}
+
 	private async Task<UserDto?> TryBuildUserDtoAsync(ApplicationUser user)
 	{
-		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 		var domain = await _userRepository.GetByIdentityUserIdAsync(user.Id);
 		if (domain == null) return null;
+
+		var roles = (await _userManager.GetRolesAsync(user)).ToList();
 
 		// Build avatar URL if available
 		string? avatarUrl = null;
@@ -422,16 +446,17 @@ public class UserService : IUserService
 			avatarUrl = _fileStorage.GetPublicUrl(domain.Avatar.StorageKey);
 		}
 
-		return new UserDto(
-			user.Id,
-			user.UserName ?? string.Empty,
-			domain.Name ?? string.Empty,
-			domain.Surname ?? string.Empty,
-			user.Email ?? string.Empty,
-			user.PhoneNumber ?? string.Empty,
-			roles,
-			avatarUrl
-		);
+		// Use AutoMapper with context items for identity fields
+		var userDto = _mapper.Map<UserDto>(domain, opts =>
+		{
+			opts.Items["Username"] = user.UserName ?? string.Empty;
+			opts.Items["Email"] = user.Email ?? string.Empty;
+			opts.Items["PhoneNumber"] = user.PhoneNumber ?? string.Empty;
+			opts.Items["Roles"] = roles;
+			opts.Items["AvatarUrl"] = avatarUrl;
+		});
+
+		return userDto;
 	}
 
 }

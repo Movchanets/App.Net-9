@@ -1,6 +1,6 @@
-using Application.ViewModels;
-using MediatR;
+using Application.DTOs;
 using Application.Interfaces;
+using MediatR;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Commands.User.Profile.ChangePassword;

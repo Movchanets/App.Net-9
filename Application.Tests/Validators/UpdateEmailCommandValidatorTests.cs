@@ -1,6 +1,6 @@
 using Application.Commands.User.Profile.UpdateEmail;
+using Application.DTOs;
 using Application.Validators;
-using Application.ViewModels;
 using FluentAssertions;
 using System;
 using Xunit;
@@ -17,7 +17,7 @@ public class UpdateEmailCommandValidatorTests
 	[InlineData("john+doe@mail.org")]
 	public void Validate_ValidEmail_PassesValidation(string email)
 	{
-		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailVM { Email = email });
+		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailDto { Email = email });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeTrue();
 	}
@@ -30,7 +30,7 @@ public class UpdateEmailCommandValidatorTests
 	[InlineData("user@")]
 	public void Validate_InvalidEmail_FailsValidation(string email)
 	{
-		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailVM { Email = email });
+		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailDto { Email = email });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 	}
@@ -38,7 +38,7 @@ public class UpdateEmailCommandValidatorTests
 	[Fact]
 	public void Validate_EmptyEmail_ReturnsRequiredError()
 	{
-		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailVM { Email = "" });
+		var command = new UpdateEmailCommand(Guid.NewGuid(), new UpdateEmailDto { Email = "" });
 		var result = _validator.Validate(command);
 		result.IsValid.Should().BeFalse();
 		result.Errors.Should().Contain(e => e.ErrorMessage.Contains("required"));

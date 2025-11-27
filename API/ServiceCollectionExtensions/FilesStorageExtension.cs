@@ -9,8 +9,8 @@ public static class FileStorageExtensions
 {
     // Додали IWebHostEnvironment для отримання шляху до кореня сайту
     public static IServiceCollection AddFileStorage(
-        this IServiceCollection services, 
-        IConfiguration configuration, 
+        this IServiceCollection services,
+        IConfiguration configuration,
         IWebHostEnvironment environment)
     {
         var storageSection = configuration.GetSection("Storage"); // Або "FileStorage", як у вас в appsettings
@@ -29,7 +29,7 @@ public static class FileStorageExtensions
                 services.Configure<LocalStorageSettings>(options =>
                 {
                     var localSection = storageSection.GetSection("Local");
-                    
+
                     // Якщо шлях не заданий явно в конфигу, беремо стандартний у wwwroot/uploads
                     var relativePath = localSection.GetValue<string>("FolderName") ?? "uploads";
                     // У тестовому середовищі WebRootPath може бути null -> Path.Combine кине ArgumentNullException
@@ -47,8 +47,9 @@ public static class FileStorageExtensions
 
                     options.BasePath = Path.Combine(webRoot, relativePath);
                     options.RequestPath = $"/{relativePath}";
+                    options.BaseUrl = localSection.GetValue<string>("BaseUrl"); // http://localhost:5000 або null
                 });
-                
+
                 services.AddScoped<IFileStorage, LocalFileStorage>();
                 break;
 
@@ -98,14 +99,14 @@ public static class FileStorageExtensions
                 services.AddSingleton<IAmazonS3>(sp =>
                 {
                     var credentials = new BasicAWSCredentials(r2AccessKey, r2SecretKey);
-                    
+
                     var config = new AmazonS3Config
                     {
                         ServiceURL = r2ServiceUrl,
                         ForcePathStyle = true, // Критично для R2/MinIO
-                      
+
                     };
-                    
+
                     return new AmazonS3Client(credentials, config);
                 });
 

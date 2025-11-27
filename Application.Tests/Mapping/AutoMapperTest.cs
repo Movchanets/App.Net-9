@@ -36,16 +36,25 @@ public class AutoMapperTest
         // Arrange - Domain.User містить лише Name, Surname, ImageUrl
         var domainUser = new User(System.Guid.NewGuid(), "John", "Doe");
 
-        // Act
-        var dto = _mapper.Map<UserDto>(domainUser);
+        // Act - передаємо context items для Identity полів
+        var dto = _mapper.Map<UserDto>(domainUser, opts =>
+        {
+            opts.Items["Username"] = "john.doe";
+            opts.Items["Email"] = "john@example.com";
+            opts.Items["PhoneNumber"] = "+1234567890";
+            opts.Items["Roles"] = new List<string> { "Customer" };
+            opts.Items["AvatarUrl"] = "/uploads/avatar.jpg";
+        });
 
-        // Assert - базовий маппінг працює, але Username/Email/Roles заповнюються handler'ом
+        // Assert - базовий маппінг працює з context items
         dto.Should().NotBeNull();
         dto.Name.Should().Be("John");
         dto.Surname.Should().Be("Doe");
-        dto.Username.Should().Be(string.Empty); // Заповнюється handler'ом з IIdentityService
-        dto.Email.Should().Be(string.Empty); // Заповнюється handler'ом з IIdentityService
-        dto.Roles.Should().BeEmpty(); // Заповнюється handler'ом з IIdentityService
+        dto.Username.Should().Be("john.doe");
+        dto.Email.Should().Be("john@example.com");
+        dto.PhoneNumber.Should().Be("+1234567890");
+        dto.Roles.Should().ContainSingle().Which.Should().Be("Customer");
+        dto.AvatarUrl.Should().Be("/uploads/avatar.jpg");
     }
 
     [Fact]

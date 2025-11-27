@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { Resolver } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useProfileStore } from '../../store/profileStore'
-
+import { userApi } from '../../api/userApi'
+import ImageCropper from '../ImageCropper'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -16,6 +17,10 @@ export default function ProfileForm() {
   const { profile, fetchProfile, updateInfo, updatePhone, updateEmail } = useProfileStore()
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // build validation schema using localized messages
   const infoSchema = yup.object({
@@ -38,10 +43,10 @@ export default function ProfileForm() {
   const infoDefaults: InfoFormValues = {
     name: typeof profile?.name === 'string' ? profile!.name : '',
     surname: typeof profile?.surname === 'string' ? profile!.surname : '',
-    username: typeof (profile as any)?.username === 'string' ? (profile as any).username : '',
+    username: (profile as {username?: string})?.username || '',
   }
   const phoneDefaults: PhoneFormValues = { phone: typeof profile?.phoneNumber === 'string' ? profile!.phoneNumber : '' }
-  const emailDefaults: EmailFormValues = { email: typeof profile?.email === 'string' ? (profile as any).email : '' }
+  const emailDefaults: EmailFormValues = { email: (profile as {email?: string})?.email || '' }
 
   const {
     register: registerInfo,
@@ -129,6 +134,76 @@ export default function ProfileForm() {
     }
   }
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file')
+      return
+    }
+
+    // Create preview URL
+    const reader = new FileReader()
+    reader.onload = () => {
+      setImageSrc(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setError(null)
+    setSuccess(null)
+    setIsUploading(true)
+
+    try {
+      // Convert blob to file
+      const file = new File([croppedBlob], 'profile-picture.jpg', { type: 'image/jpeg' })
+      
+      // Upload
+      await userApi.uploadProfilePicture(file)
+      
+      // Refresh profile to get new avatar URL
+      await fetchProfile()
+      
+      setSuccess(t('profile.picture_updated'))
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      let msg = t('errors.save_failed')
+      if (err instanceof Error) msg = err.message
+      else if (typeof err === 'string') msg = err
+      setError(msg)
+    } finally {
+      setIsUploading(false)
+      setImageSrc(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeletePicture = async () => {
+    if (!window.confirm(t('profile.delete_picture') + '?')) return
+
+    setError(null)
+    setSuccess(null)
+    setIsDeleting(true)
+
+    try {
+      await userApi.deleteProfilePicture()
+      await fetchProfile()
+      
+      setSuccess(t('profile.picture_deleted'))
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      let msg = t('errors.save_failed')
+      if (err instanceof Error) msg = err.message
+      else if (typeof err === 'string') msg = err
+      setError(msg)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (!profile && !error) return <div className="text-sm text-text-muted">{t('auth.loading')}</div>
 
   const profileIdOrEmail = profile ? ((profile as { id?: string; email?: string }).id ?? (profile as { id?: string; email?: string }).email ?? 'me') : 'empty'
@@ -138,9 +213,72 @@ export default function ProfileForm() {
 
   return (
     <div className="space-y-8">
-      <form key={infoFormKey} onSubmit={handleSubmitInfo(onSubmitInfo)} className="space-y-4">
+      {/* Profile Picture Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-text dark:text-white">{t('profile.picture')}</h3>
         {error && <div className="text-sm text-red-600">{error}</div>}
         {success && <div className="text-sm text-green-600">{success}</div>}
+        
+        <div className="flex items-center gap-4">
+          {/* Avatar preview */}
+          <div className="h-24 w-24 rounded-full overflow-hidden bg-violet-200 dark:bg-violet-600 flex items-center justify-center">
+            {profile?.avatarUrl ? (
+              <img 
+                src={profile.avatarUrl} 
+                alt="Profile" 
+                className="h-full w-full object-cover" 
+              />
+            ) : (
+              <span className="text-2xl font-semibold text-white">
+                {profile?.name?.[0] || profile?.email?.[0] || '?'}
+              </span>
+            )}
+          </div>
+
+          {/* Upload/Delete buttons */}
+          <div className="flex flex-col gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || isDeleting}
+              className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand/90 disabled:opacity-50 text-sm"
+            >
+              {profile?.avatarUrl ? t('profile.change_picture') : t('profile.upload_picture')}
+            </button>
+            {profile?.avatarUrl && (
+              <button
+                type="button"
+                onClick={handleDeletePicture}
+                disabled={isUploading || isDeleting}
+                className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 text-sm"
+              >
+                {isDeleting ? t('profile.deleting') : t('profile.delete_picture')}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Image Cropper Modal */}
+      {imageSrc && (
+        <ImageCropper
+          imageSrc={imageSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setImageSrc(null)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+          }}
+        />
+      )}
+
+      <form key={infoFormKey} onSubmit={handleSubmitInfo(onSubmitInfo)} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">{t('settings.profile.name')}</label>
           <input {...registerInfo('name')} className="w-full px-3 py-2 border rounded-md" />

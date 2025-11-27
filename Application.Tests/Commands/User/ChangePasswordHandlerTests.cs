@@ -1,6 +1,6 @@
 using Application.Commands.User.Profile.ChangePassword;
+using Application.DTOs;
 using Application.Interfaces;
-using Application.ViewModels;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -29,7 +29,7 @@ public class ChangePasswordHandlerTests
 		var id = Guid.NewGuid();
 		_identityServiceMock.Setup(x => x.ChangePasswordAsync(id, "old", "new")).ReturnsAsync(true);
 
-		var vm = new ChangePasswordVM { CurrentPassword = "old", NewPassword = "new" };
+		var vm = new ChangePasswordDto { CurrentPassword = "old", NewPassword = "new" };
 		var result = await _handler.Handle(new ChangePasswordCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeTrue();
@@ -41,7 +41,7 @@ public class ChangePasswordHandlerTests
 		var id = Guid.NewGuid();
 		_identityServiceMock.Setup(x => x.ChangePasswordAsync(id, "bad", "new")).ReturnsAsync(false);
 
-		var vm = new ChangePasswordVM { CurrentPassword = "bad", NewPassword = "new" };
+		var vm = new ChangePasswordDto { CurrentPassword = "bad", NewPassword = "new" };
 		var result = await _handler.Handle(new ChangePasswordCommand(id, vm), CancellationToken.None);
 
 		result.IsSuccess.Should().BeFalse();

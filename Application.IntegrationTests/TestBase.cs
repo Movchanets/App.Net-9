@@ -75,6 +75,13 @@ public abstract class TestBase : IDisposable
             .ReturnsAsync(new ProcessedImageResult(processedStream, "image/webp", ".webp", 256, 256));
         services.AddSingleton(imageServiceMock.Object);
 
+        // Реєструємо AutoMapper
+        var mapperConfig = new AutoMapper.MapperConfiguration(mc =>
+        {
+            mc.AddProfile(new Application.Mapping.AutoMapperProfile());
+        }, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
+        services.AddSingleton(mapperConfig.CreateMapper());
+
         // Реєструємо UserService
         services.AddScoped<Application.Interfaces.IUserService, Infrastructure.Services.UserService>();
 

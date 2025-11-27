@@ -23,18 +23,20 @@ public class TokenService : ITokenService
     private readonly RoleManager<RoleEntity> _roleManager;
     private readonly IUserClaimsPrincipalFactory<ApplicationUser> _claimsFactory;
     private readonly IUserRepository _userRepository;
+    private readonly IFileStorage _fileStorage;
 
     /// <summary>
     /// Ініціалізує новий екземпляр TokenService
     /// </summary>
     public TokenService(IConfiguration config, UserManager<ApplicationUser> userManager, RoleManager<RoleEntity> roleManager,
-        IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory, IUserRepository userRepository)
+        IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory, IUserRepository userRepository, IFileStorage fileStorage)
     {
         _config = config;
         _userManager = userManager;
         _roleManager = roleManager;
         _claimsFactory = claimsFactory;
         _userRepository = userRepository;
+        _fileStorage = fileStorage;
     }
     private async Task<List<Claim>> GetValidClaims(
     ApplicationUser identityUser,
@@ -49,10 +51,7 @@ public class TokenService : ITokenService
         claims.Add(new Claim("firstName", domainUser.Name ?? ""));
         claims.Add(new Claim("lastName", domainUser.Surname ?? "")); // Або family_name
         claims.Add(new Claim("isBlocked", domainUser.IsBlocked.ToString()));
-        if (domainUser.Avatar != null)
-        {
-            claims.Add(new Claim("picture", domainUser.Avatar.StorageKey));
-        }
+        // avatarUrl is already added by ClaimsPrincipalFactory
 
         // Додаємо кастомні клейми, збережені для IdentityUser
         var userClaims = await _userManager.GetClaimsAsync(identityUser);

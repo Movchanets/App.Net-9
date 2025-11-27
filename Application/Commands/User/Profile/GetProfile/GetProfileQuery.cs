@@ -1,6 +1,5 @@
 using MediatR;
 using Application.DTOs;
-using Application.ViewModels;
 
 namespace Application.Commands.User.Profile.GetProfile;
 

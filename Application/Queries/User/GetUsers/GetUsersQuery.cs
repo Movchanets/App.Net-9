@@ -1,7 +1,6 @@
-using Application.ViewModels;
+using Application.DTOs;
 using MediatR;
 
 namespace Application.Queries.User.GetUsers;
 
-
-public record GetUsersQuery : IRequest<ServiceResponse>;
+public record GetUsersQuery : IRequest<ServiceResponse<List<UserDto>>>;

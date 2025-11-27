@@ -1,4 +1,6 @@
 using Application.Interfaces;
+using Application.Mapping;
+using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using FluentAssertions;
@@ -87,6 +89,13 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 			.Setup(x => x.ProcessAsync(It.IsAny<Stream>(), It.IsAny<ImageResizeMode>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new ProcessedImageResult(processedStream, "image/webp", ".webp", 256, 256));
 
+		// Create AutoMapper configuration
+		var mapperConfig = new MapperConfiguration(mc =>
+		{
+			mc.AddProfile(new AutoMapperProfile());
+		}, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
+		var mapper = mapperConfig.CreateMapper();
+
 		// Create UserService with real dependencies and mocked file/image services
 		_userService = new Infrastructure.Services.UserService(
 			_userManager,
@@ -95,7 +104,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 			_fileStorageMock.Object,
 			_imageServiceMock.Object,
 			_mediaImageRepository,
-			unitOfWork
+			unitOfWork,
+			mapper
 		);
 	}
 

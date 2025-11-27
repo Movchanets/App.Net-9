@@ -1,5 +1,4 @@
-using Application.ViewModels;
-using Application.Models;
+using Application.DTOs;
 using MediatR;
 using Application.Interfaces;
 
@@ -8,16 +7,16 @@ namespace Application.Queries.User.GetUserByEmail;
 /// <summary>
 /// Handler для отримання користувача за email
 /// </summary>
-public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, ServiceResponse<UserVM>>
+public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, ServiceResponse<UserDto>>
 {
-    private readonly IUserService _identity;
+    private readonly IUserService _userService;
 
     /// <summary>
     /// Ініціалізує новий екземпляр GetUserByEmailQueryHandler
     /// </summary>
-    public GetUserByEmailQueryHandler(IUserService identity)
+    public GetUserByEmailQueryHandler(IUserService userService)
     {
-        _identity = identity;
+        _userService = userService;
     }
 
     /// <summary>
@@ -26,20 +25,12 @@ public class GetUserByEmailQueryHandler : IRequestHandler<GetUserByEmailQuery, S
     /// <param name="request">Запит з email користувача</param>
     /// <param name="cancellationToken">Токен скасування</param>
     /// <returns>Дані користувача з ролями</returns>
-    public async Task<ServiceResponse<UserVM>> Handle(GetUserByEmailQuery request, CancellationToken cancellationToken)
+    public async Task<ServiceResponse<UserDto>> Handle(GetUserByEmailQuery request, CancellationToken cancellationToken)
     {
-        var info = await _identity.GetIdentityInfoByEmailAsync(request.Email);
-        if (info == null)
-            return new ServiceResponse<UserVM>(false, "User not found");
+        var userDto = await _userService.GetIdentityInfoByEmailAsync(request.Email);
+        if (userDto == null)
+            return new ServiceResponse<UserDto>(false, "User not found");
 
-        var userVM = new UserVM
-        {
-            Id = info.Id,
-            UserName = info.Username,
-            Email = info.Email,
-            UserRoles = info.Roles
-        };
-
-        return new ServiceResponse<UserVM>(true, "User retrieved successfully", userVM);
+        return new ServiceResponse<UserDto>(true, "User retrieved successfully", userDto);
     }
 }
