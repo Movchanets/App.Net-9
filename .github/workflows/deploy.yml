@@ -41,60 +41,54 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Azure CLI - Login to ACR
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az acr login --name ${{ secrets.AZURE_ACR_NAME }}
+      - name: Login to ACR
+        run: |
+          az acr login --name ${{ secrets.AZURE_ACR_NAME }}
 
       - name: Ensure Container Apps Environment exists
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            if ! az containerapp env show --name ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
-              echo "Creating Container Apps Environment..."
-              az containerapp env create \
-                --name ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} \
-                --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --location $AZURE_LOCATION
-            else
-              echo "Container Apps Environment already exists."
-            fi
+        run: |
+          if ! az containerapp env show --name ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+            echo "Creating Container Apps Environment..."
+            az containerapp env create \
+              --name ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --location $AZURE_LOCATION
+          else
+            echo "Container Apps Environment already exists."
+          fi
 
       - name: Ensure API Container App exists
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual"
-            REG_USER=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query username -o tsv)
-            REG_PASS=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query passwords[0].value -o tsv)
-            if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
-              echo "Creating API Container App..."
-              az containerapp create \
-                --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
-                --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --environment ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} \
-                --image $IMAGE_NAME \
-                --target-port 5188 \
-                --ingress external \
-                --registry-server ${{ secrets.AZURE_ACR_NAME }}.azurecr.io \
-                --registry-username $REG_USER \
-                --registry-password $REG_PASS \
-                --min-replicas 0 --max-replicas 1 \
-                --env-vars ASPNETCORE_ENVIRONMENT=Production \
-                JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }} \
-                JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }} \
-                ConnectionStrings__DefaultConnection="${{ secrets.DATABASE_CONNECTION_STRING }}" \
-                Storage__Azure__ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-                Storage__Azure__ContainerName=$AZURE_STORAGE_CONTAINER_NAME \
-                Storage__Azure__CdnUrl="${{ secrets.AZURE_CDN_URL }}" \
-                SmtpSettings__Username="${{ secrets.SMTP_USERNAME }}" \
-                SmtpSettings__Password="${{ secrets.SMTP_PASSWORD }}" \
-                Turnstile__Secret="${{ secrets.TURNSTILE_SECRET }}" \
-                AllowedCorsOrigins="${{ secrets.ALLOWED_CORS_ORIGINS }}"
-            else
-              echo "API Container App already exists. Will update image & env vars next."
-            fi
+        run: |
+          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual"
+          REG_USER=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query username -o tsv)
+          REG_PASS=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query passwords[0].value -o tsv)
+          if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+            echo "Creating API Container App..."
+            az containerapp create \
+              --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ secrets.AZURE_CONTAINERAPPS_ENVIRONMENT_NAME }} \
+              --image $IMAGE_NAME \
+              --target-port 5188 \
+              --ingress external \
+              --registry-server ${{ secrets.AZURE_ACR_NAME }}.azurecr.io \
+              --registry-username $REG_USER \
+              --registry-password $REG_PASS \
+              --min-replicas 0 --max-replicas 1 \
+              --env-vars ASPNETCORE_ENVIRONMENT=Production \
+              JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }} \
+              JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }} \
+              ConnectionStrings__DefaultConnection="${{ secrets.DATABASE_CONNECTION_STRING }}" \
+              Storage__Azure__ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              Storage__Azure__ContainerName=$AZURE_STORAGE_CONTAINER_NAME \
+              Storage__Azure__CdnUrl="${{ secrets.AZURE_CDN_URL }}" \
+              SmtpSettings__Username="${{ secrets.SMTP_USERNAME }}" \
+              SmtpSettings__Password="${{ secrets.SMTP_PASSWORD }}" \
+              Turnstile__Secret="${{ secrets.TURNSTILE_SECRET }}" \
+              AllowedCorsOrigins="${{ secrets.ALLOWED_CORS_ORIGINS }}"
+          else
+            echo "API Container App already exists. Will update image & env vars next."
+          fi
 
       - name: Build & Push API Image
         run: |
@@ -102,36 +96,32 @@ jobs:
           docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual
 
       - name: Deploy API to Azure Container Apps
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az containerapp update \
-              --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual \
-              --set-env-vars \
-                ASPNETCORE_ENVIRONMENT=Production \
-                JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }} \
-                JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }} \
-                ConnectionStrings__DefaultConnection=${{ secrets.DATABASE_CONNECTION_STRING }} \
-                Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
-                Storage__Azure__ContainerName=${{ env.AZURE_STORAGE_CONTAINER_NAME }} \
-                Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }} \
-                SmtpSettings__Username=${{ secrets.SMTP_USERNAME }} \
-                SmtpSettings__Password=${{ secrets.SMTP_PASSWORD }} \
-                Turnstile__Secret=${{ secrets.TURNSTILE_SECRET }} \
-                AllowedCorsOrigins=${{ secrets.ALLOWED_CORS_ORIGINS }}
+        run: |
+          az containerapp update \
+            --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual \
+            --set-env-vars \
+              ASPNETCORE_ENVIRONMENT=Production \
+              JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }} \
+              JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }} \
+              ConnectionStrings__DefaultConnection=${{ secrets.DATABASE_CONNECTION_STRING }} \
+              Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
+              Storage__Azure__ContainerName=${{ env.AZURE_STORAGE_CONTAINER_NAME }} \
+              Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }} \
+              SmtpSettings__Username=${{ secrets.SMTP_USERNAME }} \
+              SmtpSettings__Password=${{ secrets.SMTP_PASSWORD }} \
+              Turnstile__Secret=${{ secrets.TURNSTILE_SECRET }} \
+              AllowedCorsOrigins=${{ secrets.ALLOWED_CORS_ORIGINS }}
 
       - name: Get API URL
         id: get-api-url
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            FQDN=$(az containerapp show \
-              --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --query properties.configuration.ingress.fqdn -o tsv)
-            echo "url=https://$FQDN" >> $GITHUB_OUTPUT
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "url=https://$FQDN" >> $GITHUB_OUTPUT
 
   # ============================================
   # Build & Upload Frontend to Azure Storage Static Website
@@ -166,18 +156,16 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Upload to Azure Storage Static Website ($web)
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az storage blob service-properties update \
-              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
-              --static-website \
-              --index-document index.html \
-              --404-document index.html
+        run: |
+          az storage blob service-properties update \
+            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
+            --static-website \
+            --index-document index.html \
+            --404-document index.html
 
-            az storage blob upload-batch \
-              --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
-              --destination '$web' \
-              --source ./Front/dist \
-              --overwrite
+          az storage blob upload-batch \
+            --account-name ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }} \
+            --destination '$web' \
+            --source ./Front/dist \
+            --overwrite
   # Manual-only workflow with two jobs (API + static front)
