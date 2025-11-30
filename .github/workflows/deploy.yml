@@ -59,7 +59,7 @@ jobs:
 
       - name: Ensure API Container App exists
         run: |
-          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual"
+          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest"
           REG_USER=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query username -o tsv)
           REG_PASS=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query passwords[0].value -o tsv)
           if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
@@ -79,7 +79,8 @@ jobs:
                 "ASPNETCORE_ENVIRONMENT=Production" \
                 "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
                 "JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
-                "ConnectionStrings__DefaultConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+                "ConnectionStrings__NeonConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+                "Storage__Provider=azure" \
                 "Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
                 "Storage__Azure__ContainerName=$AZURE_STORAGE_CONTAINER_NAME" \
                 "Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }}" \
@@ -93,21 +94,21 @@ jobs:
 
       - name: Build & Push API Image
         run: |
-          docker build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual -f API/Dockerfile .
-          docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual
+          docker build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest -f API/Dockerfile .
+          docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest
 
       - name: Deploy API to Azure Container Apps
         run: |
           az containerapp update \
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual \
-            --target-port 80 \
+            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest \
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
               "JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
-              "ConnectionStrings__DefaultConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+              "ConnectionStrings__NeonConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+              "Storage__Provider=azure" \
               "Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
               "Storage__Azure__ContainerName=${{ env.AZURE_STORAGE_CONTAINER_NAME }}" \
               "Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }}" \
@@ -123,7 +124,13 @@ jobs:
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --query properties.configuration.ingress.fqdn -o tsv)
-          echo "url=https://$FQDN" >> $GITHUB_OUTPUT
+          if [ -z "$FQDN" ]; then
+            echo "Failed to resolve API FQDN" >&2
+            exit 1
+          fi
+          API_URL="https://$FQDN/api"
+          echo "Resolved API URL: $API_URL"
+          echo "url=$API_URL" >> $GITHUB_OUTPUT
 
   # ============================================
   # Build & Upload Frontend to Azure Storage Static Website
@@ -157,9 +164,15 @@ jobs:
       - name: Build frontend
         working-directory: ./Front
         env:
-          VITE_API_URL: ${{ needs.deploy-container-apps.outputs.api_url }}
+          VITE_API_URL: ${{secrets.VITE_API_URL }}
+          VITE_TURNSTILE_SITEKEY: ${{ secrets.VITE_TURNSTILE_SITEKEY }}
         run: |
           echo "Node version:" $(node -v)
+          echo "VITE_API_URL=${VITE_API_URL}"
+          if [ -z "${VITE_API_URL}" ]; then
+            echo "VITE_API_URL is empty. Failing build to avoid publishing wrong base URL." >&2
+            exit 1
+          fi
           npm run build
 
       - name: Azure Login
