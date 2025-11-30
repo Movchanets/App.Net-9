@@ -1,7 +1,8 @@
 import axios from "axios";
 import type { TokenResponse } from './authApi';
 
-const BASE_URL = "http://localhost:5188/api";
+// Prefer build-time env, fallback to relative API path if missing
+const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "/api";
 
 const axiosClient = axios.create({
   baseURL: BASE_URL, // ⚡ твій бекенд API
