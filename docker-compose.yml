@@ -5,7 +5,8 @@ services:
       context: .
       dockerfile: API/Dockerfile
     ports:
-      - "5188:5188"
+      # Host port 5188 mapped to container port 80 (Dockerfile exposes 80)
+      - "5188:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION_STRING}
