@@ -122,7 +122,13 @@ jobs:
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --query properties.configuration.ingress.fqdn -o tsv)
-          echo "url=https://$FQDN" >> $GITHUB_OUTPUT
+          if [ -z "$FQDN" ]; then
+            echo "Failed to resolve API FQDN" >&2
+            exit 1
+          fi
+          API_URL="https://$FQDN/api"
+          echo "Resolved API URL: $API_URL"
+          echo "url=$API_URL" >> $GITHUB_OUTPUT
 
   # ============================================
   # Build & Upload Frontend to Azure Storage Static Website
@@ -159,6 +165,11 @@ jobs:
           VITE_API_URL: ${{ needs.deploy-container-apps.outputs.api_url }}
         run: |
           echo "Node version:" $(node -v)
+          echo "VITE_API_URL=${VITE_API_URL}"
+          if [ -z "${VITE_API_URL}" ]; then
+            echo "VITE_API_URL is empty. Failing build to avoid publishing wrong base URL." >&2
+            exit 1
+          fi
           npm run build
 
       - name: Azure Login
