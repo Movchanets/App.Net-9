@@ -80,6 +80,7 @@ jobs:
                 "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
                 "JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
                 "ConnectionStrings__NeonConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+                "Storage__Provider=azure" \
                 "Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
                 "Storage__Azure__ContainerName=$AZURE_STORAGE_CONTAINER_NAME" \
                 "Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }}" \
@@ -107,6 +108,7 @@ jobs:
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
               "JwtSettings__RefreshTokenSecret=${{ secrets.JWT_REFRESH_TOKEN_SECRET }}" \
               "ConnectionStrings__NeonConnection=${{ secrets.DATABASE_CONNECTION_STRING }}" \
+              "Storage__Provider=azure" \
               "Storage__Azure__ConnectionString=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
               "Storage__Azure__ContainerName=${{ env.AZURE_STORAGE_CONTAINER_NAME }}" \
               "Storage__Azure__CdnUrl=${{ secrets.AZURE_CDN_URL }}" \
