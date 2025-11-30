@@ -130,12 +130,6 @@ jobs:
           echo "Resolved API URL: $API_URL"
           echo "url=$API_URL" >> $GITHUB_OUTPUT
 
-      - name: Save API URL as repository secret
-        run: |
-          gh secret set VITE_API_URL --body "${{ steps.get-api-url.outputs.url }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # ============================================
   # Build & Upload Frontend to Azure Storage Static Website
   # ============================================
@@ -168,7 +162,7 @@ jobs:
       - name: Build frontend
         working-directory: ./Front
         env:
-          VITE_API_URL: ${{ needs.deploy-container-apps.outputs.api_url || secrets.VITE_API_URL }}
+          VITE_API_URL: ${{secrets.VITE_API_URL }}
         run: |
           echo "Node version:" $(node -v)
           echo "VITE_API_URL=${VITE_API_URL}"
