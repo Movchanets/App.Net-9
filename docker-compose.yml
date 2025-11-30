@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: API/Dockerfile
+    ports:
+      - "5188:5188"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=${DATABASE_CONNECTION_STRING}
+      - Storage__Provider=Local
+      - Storage__Local__Path=/app/uploads
+      - JwtSettings__Issuer=AppNetApi
+      - JwtSettings__Audience=AppNetClient
+      - JwtSettings__AccessTokenSecret=${JWT_ACCESS_TOKEN_SECRET:-change-me-min-32-chars-required}
+      - JwtSettings__RefreshTokenSecret=${JWT_REFRESH_TOKEN_SECRET:-change-me-min-32-chars-required}
+      - JwtSettings__AccessTokenExpirationMinutes=60
+      - JwtSettings__RefreshTokenExpirationDays=7
+    volumes:
+      - api-uploads:/app/uploads
+  front:
+    build:
+      context: .
+      dockerfile: Front/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:5188}
+    ports:
+      - "5173:80"
+
+volumes:
+  api-uploads:

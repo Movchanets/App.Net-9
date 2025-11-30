@@ -13,3 +13,10 @@ API/appsettings.*.json
 .cursor/
 Front/.env
 API/wwwroot/
+
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfstate
+infra/terraform/terraform.tfstate.backup
+infra/terraform/*.tfvars

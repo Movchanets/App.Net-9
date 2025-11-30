@@ -88,7 +88,8 @@ try
     {
         // Use PostgreSQL in non-testing environments
         builder.Services.AddDbContext<AppDbContext>(opt =>
-            opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+            opt.UseNpgsql(builder.Configuration.GetConnectionString("NeonConnection")));
+          // opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
     }
 
     // MediatR
