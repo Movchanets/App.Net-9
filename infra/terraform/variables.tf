@@ -47,6 +47,6 @@ variable "enable_front_container_app" {
 
 variable "api_image" {
   type        = string
-  description = "API container image (e.g., acrappnet9.azurecr.io/app-api:manual). Defaults to a placeholder hello-world image."
+  description = "API container image (e.g., acrappnet9.azurecr.io/app-api:latest). Defaults to a placeholder hello-world image."
   default     = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
 }

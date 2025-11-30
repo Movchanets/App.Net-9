@@ -59,7 +59,7 @@ jobs:
 
       - name: Ensure API Container App exists
         run: |
-          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual"
+          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest"
           REG_USER=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query username -o tsv)
           REG_PASS=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query passwords[0].value -o tsv)
           if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
@@ -93,15 +93,15 @@ jobs:
 
       - name: Build & Push API Image
         run: |
-          docker build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual -f API/Dockerfile .
-          docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual
+          docker build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest -f API/Dockerfile .
+          docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest
 
       - name: Deploy API to Azure Container Apps
         run: |
           az containerapp update \
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:manual \
+            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest \
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
