@@ -43,7 +43,8 @@ jobs:
 
       - name: Login to GitHub Container Registry
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          ACTOR_LC=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "$ACTOR_LC" --password-stdin
 
       - name: Ensure Container Apps Environment exists
         run: |
@@ -59,7 +60,9 @@ jobs:
 
       - name: Ensure API Container App exists
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          ACTOR_LC=$(echo "${{ github.actor }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/$OWNER_LC/app.net-9/app-api:latest"
           if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
             echo "Creating API Container App..."
             az containerapp create \
@@ -70,7 +73,7 @@ jobs:
               --target-port 80 \
               --ingress external \
               --registry-server ghcr.io \
-              --registry-username ${{ github.actor }} \
+              --registry-username "$ACTOR_LC" \
               --registry-password ${{ secrets.GITHUB_TOKEN }} \
               --min-replicas 0 --max-replicas 1 \
               --env-vars \
@@ -92,16 +95,18 @@ jobs:
 
       - name: Build & Push API Image
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="ghcr.io/$OWNER_LC/app.net-9/app-api:latest"
           docker build -t "$IMAGE_NAME" -f API/Dockerfile .
           docker push "$IMAGE_NAME"
 
       - name: Deploy API to Azure Container Apps
         run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           az containerapp update \
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest \
+            --image ghcr.io/$OWNER_LC/app.net-9/app-api:latest \
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
