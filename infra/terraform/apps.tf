@@ -85,7 +85,7 @@ resource "azurerm_container_app" "api" {
       }
       env {
         name  = "AllowedCorsOrigins"
-        value = var.allowed_cors_origins
+        value = var.allowed_cors_origins != "" ? var.allowed_cors_origins : azurerm_storage_account.static.primary_web_endpoint
       }
     }
   }

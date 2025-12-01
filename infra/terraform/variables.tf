@@ -49,12 +49,14 @@ variable "api_image" {
 variable "github_username" {
   type        = string
   description = "GitHub username for ghcr.io authentication (e.g., github.actor)"
+  default     = ""
 }
 
 variable "github_token" {
   type        = string
   description = "GitHub Personal Access Token for ghcr.io authentication"
   sensitive   = true
+  default     = ""
 }
 
 variable "database_connection_string" {
@@ -107,6 +109,6 @@ variable "turnstile_secret" {
 
 variable "allowed_cors_origins" {
   type        = string
-  description = "Allowed CORS origins (comma-separated)"
+  description = "Allowed CORS origins (comma-separated). Defaults to static website URL if empty."
   default     = ""
 }
