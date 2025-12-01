@@ -59,7 +59,7 @@ jobs:
 
       - name: Ensure API Container App exists
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository }}/app-api:latest"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest"
           if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
             echo "Creating API Container App..."
             az containerapp create \
@@ -92,7 +92,7 @@ jobs:
 
       - name: Build & Push API Image
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository }}/app-api:latest"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest"
           docker build -t "$IMAGE_NAME" -f API/Dockerfile .
           docker push "$IMAGE_NAME"
 
@@ -101,7 +101,7 @@ jobs:
           az containerapp update \
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ghcr.io/${{ github.repository }}/app-api:latest \
+            --image ghcr.io/${{ github.repository_owner }}/app.net-9/app-api:latest \
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
