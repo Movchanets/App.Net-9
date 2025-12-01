@@ -41,9 +41,9 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to ACR
+      - name: Login to GitHub Container Registry
         run: |
-          az acr login --name ${{ secrets.AZURE_ACR_NAME }}
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Ensure Container Apps Environment exists
         run: |
@@ -59,9 +59,7 @@ jobs:
 
       - name: Ensure API Container App exists
         run: |
-          IMAGE_NAME="${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest"
-          REG_USER=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query username -o tsv)
-          REG_PASS=$(az acr credential show --name ${{ secrets.AZURE_ACR_NAME }} --query passwords[0].value -o tsv)
+          IMAGE_NAME="ghcr.io/${{ github.repository }}/app-api:latest"
           if ! az containerapp show --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
             echo "Creating API Container App..."
             az containerapp create \
@@ -71,9 +69,9 @@ jobs:
               --image "$IMAGE_NAME" \
               --target-port 80 \
               --ingress external \
-              --registry-server ${{ secrets.AZURE_ACR_NAME }}.azurecr.io \
-              --registry-username "$REG_USER" \
-              --registry-password "$REG_PASS" \
+              --registry-server ghcr.io \
+              --registry-username ${{ github.actor }} \
+              --registry-password ${{ secrets.GITHUB_TOKEN }} \
               --min-replicas 0 --max-replicas 1 \
               --env-vars \
                 "ASPNETCORE_ENVIRONMENT=Production" \
@@ -94,15 +92,16 @@ jobs:
 
       - name: Build & Push API Image
         run: |
-          docker build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest -f API/Dockerfile .
-          docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest
+          IMAGE_NAME="ghcr.io/${{ github.repository }}/app-api:latest"
+          docker build -t "$IMAGE_NAME" -f API/Dockerfile .
+          docker push "$IMAGE_NAME"
 
       - name: Deploy API to Azure Container Apps
         run: |
           az containerapp update \
             --name ${{ secrets.AZURE_CONTAINERAPP_API_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/app-api:latest \
+            --image ghcr.io/${{ github.repository }}/app-api:latest \
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "JwtSettings__AccessTokenSecret=${{ secrets.JWT_ACCESS_TOKEN_SECRET }}" \
