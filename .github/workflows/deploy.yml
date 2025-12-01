@@ -3,6 +3,10 @@ name: Manual Deploy to Azure (Container Apps + Static Front)
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   DOTNET_VERSION: '9.0.x'
   NODE_VERSION: '20.x'
