@@ -9,6 +9,7 @@ using Testcontainers.PostgreSql;
 using Respawn;
 using Respawn.Graph;
 using Npgsql;
+using System.Threading;
 
 namespace Infrastructure.IntegrationTests;
 
@@ -24,21 +25,18 @@ public abstract class TestBase : IAsyncLifetime
     protected readonly Application.Interfaces.IUserService IdentityService;
     protected readonly Domain.Interfaces.Repositories.IUserRepository UserRepository;
     private readonly ServiceProvider _serviceProvider;
-    private static readonly PostgreSqlContainer SharedContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:16-alpine")
-        .WithDatabase("testdb")
-        .WithUsername("testuser")
-        .WithPassword("testpass")
-        .Build();
 
-    private static readonly Task SharedContainerStartTask = SharedContainer.StartAsync();
+    private static PostgreSqlContainer? _sharedContainer;
+    private static Task? _sharedContainerStartTask;
+    private static readonly SemaphoreSlim SharedContainerLock = new(1, 1);
+
     private static Task<Respawner>? _respawnerTask;
     private static bool _schemaInitialized;
 
     protected TestBase()
     {
         // Дочікуємо запуск контейнера перед побудовою ServiceProvider
-        SharedContainerStartTask.GetAwaiter().GetResult();
+        var container = EnsureSharedContainerStartedAsync().GetAwaiter().GetResult();
 
         // Створюємо ServiceCollection для Dependency Injection
         var services = new ServiceCollection();
@@ -48,7 +46,7 @@ public abstract class TestBase : IAsyncLifetime
 
         // Налаштовуємо PostgreSQL БД через Testcontainers
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(SharedContainer.GetConnectionString()));
+            options.UseNpgsql(container.GetConnectionString()));
 
         // Налаштовуємо ASP.NET Core Identity (як у реальному додатку)
         // Для тестів замінимо провайдера токенів на простий детермінований провайдер,
@@ -117,6 +115,8 @@ public abstract class TestBase : IAsyncLifetime
     /// </summary>
     public async Task InitializeAsync()
     {
+        var container = await EnsureSharedContainerStartedAsync();
+
         if (!_schemaInitialized)
         {
             await DbContext.Database.EnsureCreatedAsync();
@@ -128,7 +128,7 @@ public abstract class TestBase : IAsyncLifetime
 
         // Швидко очищаємо дані між тестами, не дропаючи схему
         var respawner = await _respawnerTask;
-        await using var connection = new NpgsqlConnection(SharedContainer.GetConnectionString());
+        await using var connection = new NpgsqlConnection(container.GetConnectionString());
         await connection.OpenAsync();
         await respawner.ResetAsync(connection);
     }
@@ -144,8 +144,8 @@ public abstract class TestBase : IAsyncLifetime
 
     private static async Task<Respawner> CreateRespawnerAsync()
     {
-        await SharedContainerStartTask;
-        await using var connection = new NpgsqlConnection(SharedContainer.GetConnectionString());
+        var container = await EnsureSharedContainerStartedAsync();
+        await using var connection = new NpgsqlConnection(container.GetConnectionString());
         await connection.OpenAsync();
 
         return await Respawner.CreateAsync(
@@ -156,6 +156,64 @@ public abstract class TestBase : IAsyncLifetime
                 SchemasToInclude = new[] { "public" },
                 TablesToIgnore = new[] { new Table("public", "__EFMigrationsHistory") }
             });
+    }
+
+    private static async Task<PostgreSqlContainer> EnsureSharedContainerStartedAsync()
+    {
+        if (_sharedContainer is not null)
+        {
+            if (_sharedContainerStartTask is not null)
+            {
+                await _sharedContainerStartTask;
+            }
+
+            return _sharedContainer;
+        }
+
+        await SharedContainerLock.WaitAsync();
+        try
+        {
+            if (_sharedContainer is not null)
+            {
+                if (_sharedContainerStartTask is not null)
+                {
+                    await _sharedContainerStartTask;
+                }
+
+                return _sharedContainer;
+            }
+
+            const int maxAttempts = 20;
+            var delay = TimeSpan.FromSeconds(2);
+
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    _sharedContainer = new PostgreSqlBuilder()
+                        .WithImage("postgres:16-alpine")
+                        .WithDatabase("testdb")
+                        .WithUsername("testuser")
+                        .WithPassword("testpass")
+                        .Build();
+
+                    _sharedContainerStartTask = _sharedContainer.StartAsync();
+                    await _sharedContainerStartTask;
+                    return _sharedContainer;
+                }
+                catch (DotNet.Testcontainers.Builders.DockerUnavailableException) when (attempt < maxAttempts)
+                {
+                    await Task.Delay(delay);
+                }
+            }
+
+            throw new InvalidOperationException(
+                "Docker is not available. Start Docker Desktop (or ensure it is reachable at npipe://./pipe/docker_engine) and re-run the tests.");
+        }
+        finally
+        {
+            SharedContainerLock.Release();
+        }
     }
 
     // Простий детермінований провайдер токенів для тестів.
