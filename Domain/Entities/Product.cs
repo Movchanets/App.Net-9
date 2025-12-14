@@ -2,46 +2,113 @@ namespace Domain.Entities;
 
 public class Product : BaseEntity<Guid>
 {
- 
-   
     public string Name { get; private set; }
     public string? Description { get; private set; }
-    
-    // Артикул (SKU) - унікальний ідентифікатор товару для складу
-    public string Sku { get; private set; }
+    public string? BaseImageUrl { get; private set; }
 
-    // Ціна (використовуємо decimal для грошей!)
-    public decimal Price { get; private set; }
-    
-    // Кількість на складі
-    public int StockQuantity { get; private set; }
-    // Колекція картинок
-    private readonly List<MediaImage> _images = new();
-    public virtual IReadOnlyCollection<MediaImage> Images => _images.AsReadOnly();
-    // Конструктор для EF Core
+    private readonly List<ProductTag> _productTags = new();
+    public virtual IReadOnlyCollection<ProductTag> ProductTags => _productTags.AsReadOnly();
+
+    private readonly List<SkuEntity> _skus = new();
+    public virtual IReadOnlyCollection<SkuEntity> Skus => _skus.AsReadOnly();
+
+    private readonly List<ProductGallery> _gallery = new();
+    public virtual IReadOnlyCollection<ProductGallery> Gallery => _gallery.AsReadOnly();
+
+    private readonly List<ProductCategory> _productCategories = new();
+    public virtual IReadOnlyCollection<ProductCategory> ProductCategories => _productCategories.AsReadOnly();
+
     private Product() { }
-    // Публічний конструктор
-    public Product(string name, string sku, decimal price)
+
+    public Product(string name, string? description = null)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentNullException(nameof(name));
-        if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentNullException(nameof(sku));
-        if (price < 0) throw new ArgumentException("Price cannot be negative");
 
         Id = Guid.NewGuid();
-        Name = name;
-        Sku = sku;
-        Price = price;
+        Name = name.Trim();
+        Description = description?.Trim();
     }
-    // Методи бізнес-логіки
-    public void UpdateStock(int quantity)
+
+    public void UpdateDescription(string? description)
     {
-        if (quantity < 0) throw new ArgumentException("Stock cannot be negative");
-        StockQuantity = quantity;
+        Description = description?.Trim();
+        MarkAsUpdated();
     }
-    // Метод додавання картинки
-    public void AddImage(MediaImage image)
+
+    public void UpdateBaseImage(string? baseImageUrl)
     {
-        image.AssignToProduct(this); // Встановлюємо зв'язок
-        _images.Add(image);
+        BaseImageUrl = string.IsNullOrWhiteSpace(baseImageUrl) ? null : baseImageUrl.Trim();
+        MarkAsUpdated();
+    }
+
+    public void AddSku(SkuEntity sku)
+    {
+        if (sku is null) throw new ArgumentNullException(nameof(sku));
+
+        if (_skus.Any(s => s.Id == sku.Id))
+        {
+            return;
+        }
+
+        sku.AttachProduct(this);
+        _skus.Add(sku);
+    }
+
+    public void AddGalleryItem(MediaImage mediaImage, int displayOrder = 0)
+    {
+        if (mediaImage is null) throw new ArgumentNullException(nameof(mediaImage));
+
+        var galleryItem = ProductGallery.Create(this, mediaImage, displayOrder);
+        _gallery.Add(galleryItem);
+    }
+
+    public void AddCategory(Category category)
+    {
+        if (category is null) throw new ArgumentNullException(nameof(category));
+
+        if (_productCategories.Any(pc => pc.CategoryId == category.Id))
+        {
+            return;
+        }
+
+        var link = ProductCategory.Create(this, category);
+        _productCategories.Add(link);
+        category.AddProductCategory(link);
+    }
+
+    public void RemoveCategory(Guid categoryId)
+    {
+        var existing = _productCategories.FirstOrDefault(pc => pc.CategoryId == categoryId);
+        if (existing is null)
+        {
+            return;
+        }
+
+        _productCategories.Remove(existing);
+    }
+
+    public void AddTag(Tag tag)
+    {
+        if (tag is null) throw new ArgumentNullException(nameof(tag));
+
+        if (_productTags.Any(pt => pt.TagId == tag.Id))
+        {
+            return;
+        }
+
+        var productTag = ProductTag.Create(this, tag);
+        _productTags.Add(productTag);
+        tag.AddProductTag(productTag);
+    }
+
+    public void RemoveTag(Guid tagId)
+    {
+        var existing = _productTags.FirstOrDefault(pt => pt.TagId == tagId);
+        if (existing is null)
+        {
+            return;
+        }
+
+        _productTags.Remove(existing);
     }
 }

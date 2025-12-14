@@ -4,6 +4,7 @@ using System.Text.Json;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251210125950_AddCatalogAndStoreEntities")]
+    partial class AddCatalogAndStoreEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -124,34 +127,6 @@ namespace Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Products", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.ProductCategory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("ProductId", "CategoryId")
-                        .IsUnique();
-
-                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.ProductGallery", b =>
@@ -603,25 +578,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("ParentCategory");
                 });
 
-            modelBuilder.Entity("Domain.Entities.ProductCategory", b =>
-                {
-                    b.HasOne("Domain.Entities.Category", "Category")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Product", "Product")
-                        .WithMany("ProductCategories")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Domain.Entities.ProductGallery", b =>
                 {
                     b.HasOne("Domain.Entities.MediaImage", "MediaImage")
@@ -760,15 +716,11 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Category", b =>
                 {
                     b.Navigation("Children");
-
-                    b.Navigation("ProductCategories");
                 });
 
             modelBuilder.Entity("Domain.Entities.Product", b =>
                 {
                     b.Navigation("Gallery");
-
-                    b.Navigation("ProductCategories");
 
                     b.Navigation("ProductTags");
 

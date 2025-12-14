@@ -23,18 +23,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<User> DomainUsers { get; set; }
     public DbSet<MediaImage> MediaImages { get; set; }
     public DbSet<Product> Products { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<ProductTag> ProductTags { get; set; }
+    public DbSet<SkuEntity> Skus { get; set; }
+    public DbSet<ProductGallery> ProductGalleries { get; set; }
+    public DbSet<Store> Stores { get; set; }
+    public DbSet<ProductCategory> ProductCategories { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.Entity<MediaImage>(entity =>
-        {
-            entity.ToTable("MediaImages");
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.StorageKey).IsUnique();
-        });
-        var productConfig = new ProductConfiguration();
-        productConfig.Configure(builder.Entity<Product>());
+        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         // Налаштування Domain User
         builder.Entity<User>(user =>
          {

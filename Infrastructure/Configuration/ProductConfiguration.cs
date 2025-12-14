@@ -8,42 +8,41 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
-        // 1. Таблиця та Ключ
         builder.ToTable("Products");
         builder.HasKey(p => p.Id);
 
-        // 2. Властивості
         builder.Property(p => p.Name)
             .IsRequired()
-            .HasMaxLength(200); // Обмеження довжини для БД
+            .HasMaxLength(200);
 
         builder.Property(p => p.Description)
-            .HasMaxLength(2000); // Опис може бути довгим, але не безкінечним
+            .HasMaxLength(2000);
 
-        // 3. Налаштування грошей (Критично для PostgreSQL!)
-        // Postgres тип `numeric(18,2)` гарантує точність до копійок
-        builder.Property(p => p.Price)
-            .HasPrecision(18, 2) 
-            .IsRequired();
+        builder.Property(p => p.BaseImageUrl)
+            .HasMaxLength(500);
 
-        // 4. Унікальність SKU
-        builder.Property(p => p.Sku)
-            .IsRequired()
-            .HasMaxLength(50);
+        builder.Metadata.FindNavigation(nameof(Product.ProductTags))?
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        // Створюємо індекс, щоб пошук по артикулу літав, 
-        // і забороняємо дублікати артикулів
-        builder.HasIndex(p => p.Sku)
-            .IsUnique();
+        builder.Metadata.FindNavigation(nameof(Product.Skus))?
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        // 5. Зв'язок з MediaImage (One-to-Many)
-        // Тут ми вказуємо, що при видаленні Product, видаляються і його Images
-        builder.Metadata.FindNavigation(nameof(Product.Images))?
-            .SetPropertyAccessMode(PropertyAccessMode.Field); // EF Core буде писати прямо в поле _images
-            
-        builder.HasMany(p => p.Images)
-            .WithOne(i => i.Product)
-            .HasForeignKey(i => i.ProductId)
+        builder.Metadata.FindNavigation(nameof(Product.Gallery))?
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(p => p.ProductTags)
+            .WithOne(pt => pt.Product)
+            .HasForeignKey(pt => pt.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.Skus)
+            .WithOne(s => s.Product)
+            .HasForeignKey(s => s.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.Gallery)
+            .WithOne(g => g.Product)
+            .HasForeignKey(g => g.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -22,7 +22,6 @@ public class MediaImageRepository : IMediaImageRepository
 	public async Task<MediaImage?> GetByIdAsync(Guid id)
 	{
 		return await _db.MediaImages
-			.Include(m => m.Product)
 			.FirstOrDefaultAsync(m => m.Id == id);
 	}
 
@@ -32,7 +31,6 @@ public class MediaImageRepository : IMediaImageRepository
 	public async Task<MediaImage?> GetByStorageKeyAsync(string storageKey)
 	{
 		return await _db.MediaImages
-			.Include(m => m.Product)
 			.FirstOrDefaultAsync(m => m.StorageKey == storageKey);
 	}
 
@@ -65,9 +63,7 @@ public class MediaImageRepository : IMediaImageRepository
 	/// </summary>
 	public async Task<IEnumerable<MediaImage>> GetAllAsync()
 	{
-		return await _db.MediaImages
-			.Include(m => m.Product)
-			.ToListAsync();
+		return await _db.MediaImages.ToListAsync();
 	}
 
 	/// <summary>
@@ -75,8 +71,10 @@ public class MediaImageRepository : IMediaImageRepository
 	/// </summary>
 	public async Task<IEnumerable<MediaImage>> GetByProductIdAsync(Guid productId)
 	{
-		return await _db.MediaImages
-			.Where(m => m.ProductId == productId)
+		return await _db.ProductGalleries
+			.Where(pg => pg.ProductId == productId)
+			.Include(pg => pg.MediaImage)
+			.Select(pg => pg.MediaImage!)
 			.ToListAsync();
 	}
 
@@ -86,19 +84,18 @@ public class MediaImageRepository : IMediaImageRepository
 	/// </summary>
 	public async Task<IEnumerable<MediaImage>> GetOrphanedImagesAsync()
 	{
-		// Знаходимо зображення, які не прив'язані до продукту
-		var orphanedProductImages = await _db.MediaImages
-			.Where(m => m.ProductId == null)
+		var usedInGalleryIds = await _db.ProductGalleries
+			.Select(pg => pg.MediaImageId)
+			.Distinct()
 			.ToListAsync();
 
-		// Фільтруємо зображення, які не використовуються як аватари
 		var usedAvatarIds = await _db.DomainUsers
 			.Where(u => u.AvatarId != null)
 			.Select(u => u.AvatarId!.Value)
 			.ToListAsync();
 
-		return orphanedProductImages
-			.Where(m => !usedAvatarIds.Contains(m.Id))
-			.ToList();
+		return await _db.MediaImages
+			.Where(m => !usedInGalleryIds.Contains(m.Id) && !usedAvatarIds.Contains(m.Id))
+			.ToListAsync();
 	}
 }
