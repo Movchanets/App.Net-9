@@ -5,14 +5,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Application.Interfaces;
+using Testcontainers.PostgreSql;
+using Respawn;
+using Respawn.Graph;
+using Npgsql;
 
 namespace Infrastructure.IntegrationTests;
 
 /// <summary>
 /// Базовий клас для інтеграційних тестів
-/// Налаштовує реальну in-memory БД та Identity систему
+/// Підіймає реальну PostgreSQL БД через Testcontainers
 /// </summary>
-public abstract class TestBase : IDisposable
+public abstract class TestBase : IAsyncLifetime
 {
     protected readonly AppDbContext DbContext;
     protected readonly UserManager<ApplicationUser> UserManager;
@@ -20,20 +24,31 @@ public abstract class TestBase : IDisposable
     protected readonly Application.Interfaces.IUserService IdentityService;
     protected readonly Domain.Interfaces.Repositories.IUserRepository UserRepository;
     private readonly ServiceProvider _serviceProvider;
+    private static readonly PostgreSqlContainer SharedContainer = new PostgreSqlBuilder()
+        .WithImage("postgres:16-alpine")
+        .WithDatabase("testdb")
+        .WithUsername("testuser")
+        .WithPassword("testpass")
+        .Build();
+
+    private static readonly Task SharedContainerStartTask = SharedContainer.StartAsync();
+    private static Task<Respawner>? _respawnerTask;
+    private static bool _schemaInitialized;
 
     protected TestBase()
     {
+        // Дочікуємо запуск контейнера перед побудовою ServiceProvider
+        SharedContainerStartTask.GetAwaiter().GetResult();
+
         // Створюємо ServiceCollection для Dependency Injection
         var services = new ServiceCollection();
 
         // Додаємо логування (необхідне для Identity)
         services.AddLogging();
 
-        // Налаштовуємо in-memory БД (кожен тест отримує окрему БД)
-        var dbName = $"TestDb_{Guid.NewGuid()}"; // Унікальна БД для кожного тесту
+        // Налаштовуємо PostgreSQL БД через Testcontainers
         services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase(dbName)
-                   .ConfigureWarnings(warnings => warnings.Ignore(new Microsoft.Extensions.Logging.EventId(1, "TransactionIgnoredWarning"))));
+            options.UseNpgsql(SharedContainer.GetConnectionString()));
 
         // Налаштовуємо ASP.NET Core Identity (як у реальному додатку)
         // Для тестів замінимо провайдера токенів на простий детермінований провайдер,
@@ -95,18 +110,52 @@ public abstract class TestBase : IDisposable
         IdentityService = _serviceProvider.GetRequiredService<Application.Interfaces.IUserService>();
         UserRepository = _serviceProvider.GetRequiredService<Domain.Interfaces.Repositories.IUserRepository>();
 
-        // Створюємо схему БД (in-memory БД потребує ініціалізації)
-        DbContext.Database.EnsureCreated();
     }
 
     /// <summary>
-    /// Очищення після тесту - видаляємо БД
+    /// Стартуємо контейнер та створюємо схему БД
     /// </summary>
-    public void Dispose()
+    public async Task InitializeAsync()
     {
-        DbContext?.Database.EnsureDeleted();
-        DbContext?.Dispose();
+        if (!_schemaInitialized)
+        {
+            await DbContext.Database.EnsureCreatedAsync();
+            _schemaInitialized = true;
+        }
+
+        // Create Respawner only after schema exists
+        _respawnerTask ??= CreateRespawnerAsync();
+
+        // Швидко очищаємо дані між тестами, не дропаючи схему
+        var respawner = await _respawnerTask;
+        await using var connection = new NpgsqlConnection(SharedContainer.GetConnectionString());
+        await connection.OpenAsync();
+        await respawner.ResetAsync(connection);
+    }
+
+    /// <summary>
+    /// Очищення після тесту - зупиняємо контейнер
+    /// </summary>
+    public async Task DisposeAsync()
+    {
+        await DbContext.DisposeAsync();
         _serviceProvider?.Dispose();
+    }
+
+    private static async Task<Respawner> CreateRespawnerAsync()
+    {
+        await SharedContainerStartTask;
+        await using var connection = new NpgsqlConnection(SharedContainer.GetConnectionString());
+        await connection.OpenAsync();
+
+        return await Respawner.CreateAsync(
+            connection,
+            new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.Postgres,
+                SchemasToInclude = new[] { "public" },
+                TablesToIgnore = new[] { new Table("public", "__EFMigrationsHistory") }
+            });
     }
 
     // Простий детермінований провайдер токенів для тестів.

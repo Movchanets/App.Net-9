@@ -4,12 +4,11 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using FluentAssertions;
-using Infrastructure;
 using Infrastructure.Entities.Identity;
 using Infrastructure.Repositories;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.IO;
 
@@ -19,57 +18,19 @@ namespace Infrastructure.IntegrationTests.Commands;
 /// Інтеграційні тести для завантаження зображення профілю
 /// Перевіряють РЕАЛЬНЕ збереження MediaImage та оновлення User в БД
 /// </summary>
-public class UploadProfilePictureIntegrationTests : IDisposable
+public class UploadProfilePictureIntegrationTests : TestBase
 {
-	private readonly AppDbContext _dbContext;
-	private readonly UserManager<ApplicationUser> _userManager;
-	private readonly RoleManager<RoleEntity> _roleManager;
 	private readonly IUserRepository _userRepository;
 	private readonly IMediaImageRepository _mediaImageRepository;
 	private readonly Mock<IFileStorage> _fileStorageMock;
 	private readonly Mock<IImageService> _imageServiceMock;
 	private readonly Application.Interfaces.IUserService _userService;
-	private readonly ServiceProvider _serviceProvider;
 
 	public UploadProfilePictureIntegrationTests()
 	{
-		// Create service collection for DI
-		var services = new ServiceCollection();
-		services.AddLogging();
-
-		// Setup in-memory database (unique per test)
-		var dbName = $"TestDb_{Guid.NewGuid()}";
-		services.AddDbContext<AppDbContext>(options =>
-			options.UseInMemoryDatabase(dbName));
-
-		// Setup Identity
-		services.AddIdentity<ApplicationUser, RoleEntity>(options =>
-			{
-				options.Password.RequireDigit = true;
-				options.Password.RequiredLength = 6;
-				options.User.RequireUniqueEmail = true;
-			})
-			.AddEntityFrameworkStores<AppDbContext>()
-			.AddDefaultTokenProviders();
-
-		// Register repositories
-		services.AddScoped<IUserRepository, UserRepository>();
-		services.AddScoped<IMediaImageRepository, MediaImageRepository>();
-		services.AddScoped<Application.Interfaces.IUnitOfWork, Infrastructure.Services.UnitOfWork>();
-
-		// Build service provider
-		_serviceProvider = services.BuildServiceProvider();
-
-		// Get services
-		_dbContext = _serviceProvider.GetRequiredService<AppDbContext>();
-		_userManager = _serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-		_roleManager = _serviceProvider.GetRequiredService<RoleManager<RoleEntity>>();
-		_userRepository = _serviceProvider.GetRequiredService<IUserRepository>();
-		_mediaImageRepository = _serviceProvider.GetRequiredService<IMediaImageRepository>();
-		var unitOfWork = _serviceProvider.GetRequiredService<Application.Interfaces.IUnitOfWork>();
-
-		// Ensure database is created
-		_dbContext.Database.EnsureCreated();
+		_userRepository = UserRepository;
+		_mediaImageRepository = new MediaImageRepository(DbContext);
+		var unitOfWork = new UnitOfWork(DbContext);
 
 		// Setup mocks
 		_fileStorageMock = new Mock<IFileStorage>();
@@ -98,8 +59,8 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 
 		// Create UserService with real dependencies and mocked file/image services
 		_userService = new Infrastructure.Services.UserService(
-			_userManager,
-			_roleManager,
+			UserManager,
+			RoleManager,
 			_userRepository,
 			_fileStorageMock.Object,
 			_imageServiceMock.Object,
@@ -107,13 +68,6 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 			unitOfWork,
 			mapper
 		);
-	}
-
-	public void Dispose()
-	{
-		_dbContext?.Database.EnsureDeleted();
-		_dbContext?.Dispose();
-		_serviceProvider?.Dispose();
 	}
 
 	[Fact]
@@ -125,11 +79,11 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 			Email = "testuser@example.com",
 			UserName = "testuser"
 		};
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 
 		var domainUser = new User(user.Id, "Test", "User");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 }); // JPEG header
 		var fileName = "avatar.jpg";
@@ -163,10 +117,10 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange
 		var user = new ApplicationUser { Email = "user@test.com", UserName = "user" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "John", "Doe");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 		var fileName = "photo.png";
@@ -190,10 +144,10 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange
 		var user = new ApplicationUser { Email = "user@test.com", UserName = "user" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Jane", "Smith");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 		var fileName = "avatar.jpg";
@@ -216,7 +170,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange - create user with existing avatar
 		var user = new ApplicationUser { Email = "user@test.com", UserName = "user" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 
 		var oldAvatar = new MediaImage("old-avatar.webp", "image/webp", 128, 128, "Old Avatar");
 		_mediaImageRepository.Add(oldAvatar);
@@ -224,7 +178,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var domainUser = new User(user.Id, "Bob", "Johnson");
 		domainUser.SetAvatar(oldAvatar);
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -262,10 +216,10 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange
 		var user = new ApplicationUser { Email = "fk@test.com", UserName = "fkuser" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "FK", "Test");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -273,7 +227,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		await _userService.UpdateProfilePictureAsync(user.Id, fileStream, "avatar.jpg", "image/jpeg");
 
 		// Assert - verify FK relationship
-		var updatedUser = await _dbContext.DomainUsers
+		var updatedUser = await DbContext.DomainUsers
 			.Include(u => u.Avatar)
 			.FirstOrDefaultAsync(u => u.IdentityUserId == user.Id);
 
@@ -288,10 +242,10 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange
 		var user = new ApplicationUser { Email = "save@test.com", UserName = "saveuser" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Save", "Test");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		var fileStream = new MemoryStream(new byte[1024]);
 
@@ -306,7 +260,7 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 		var imagesAfter = await _mediaImageRepository.GetAllAsync();
 		imagesAfter.Should().HaveCount(1);
 
-		var userFromDb = await _dbContext.DomainUsers.FirstOrDefaultAsync(u => u.IdentityUserId == user.Id);
+		var userFromDb = await DbContext.DomainUsers.FirstOrDefaultAsync(u => u.IdentityUserId == user.Id);
 		userFromDb!.AvatarId.Should().NotBeNull();
 	}
 
@@ -315,10 +269,10 @@ public class UploadProfilePictureIntegrationTests : IDisposable
 	{
 		// Arrange
 		var user = new ApplicationUser { Email = "multi@test.com", UserName = "multiuser" };
-		await _userManager.CreateAsync(user, "Password123!");
+		await UserManager.CreateAsync(user, "Password123!");
 		var domainUser = new User(user.Id, "Multi", "Upload");
 		_userRepository.Add(domainUser);
-		await _dbContext.SaveChangesAsync();
+		await DbContext.SaveChangesAsync();
 
 		// Setup mock to return different keys
 		var uploadCount = 0;
