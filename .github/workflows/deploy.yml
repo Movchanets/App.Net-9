@@ -1,7 +1,11 @@
-name: Manual Deploy to Azure (Container Apps + Static Front)
+name:  Deploy to Azure (Container Apps + Static Front)
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 permissions:
   contents: read
