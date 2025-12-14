@@ -88,8 +88,8 @@ try
     {
         // Use PostgreSQL in non-testing environments
         builder.Services.AddDbContext<AppDbContext>(opt =>
-            opt.UseNpgsql(builder.Configuration.GetConnectionString("NeonConnection")));
-          // opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+         //opt.UseNpgsql(builder.Configuration.GetConnectionString("NeonConnection")));
+         opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
     }
 
     // MediatR
@@ -115,10 +115,22 @@ try
         })
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
-    // Додаємо політику CORS
-    var allowedOrigins = builder.Configuration["AllowedCorsOrigins"]?
-        .Split(',', StringSplitOptions.RemoveEmptyEntries)
-        ?? new[] { "http://localhost:5173", "http://localhost:5188" };
+    // CORS: normalize configured origins (trim + remove trailing slashes)
+    var rawCors = builder.Configuration["AllowedCorsOrigins"];
+    string[] allowedOrigins;
+    if (!string.IsNullOrWhiteSpace(rawCors))
+    {
+        allowedOrigins = rawCors
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(o => o.Trim().TrimEnd('/'))
+            .Where(o => o.Length > 0)
+            .Distinct()
+            .ToArray();
+    }
+    else
+    {
+        allowedOrigins = new[] { "http://localhost:5173", "http://localhost:5188" };
+    }
 
     builder.Services.AddCors(options =>
     {
@@ -215,9 +227,11 @@ try
     app.UseCors("AllowFrontend");
     app.MapControllers();
 
-
-
-    await app.SeedDataAsync();
+    // Skip seeding in Testing environment (handled by TestWebApplicationFactory)
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        await app.SeedDataAsync();
+    }
 
     Log.Information("Application started successfully");
     app.Run();
