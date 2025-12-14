@@ -8,11 +8,6 @@ variable "resource_group_name" {
   default = "rg-appnet9"
 }
 
-variable "acr_name" {
-  type    = string
-  default = "acrappnet9"
-}
-
 variable "env_name" {
   type    = string
   default = "cae-appnet9"
@@ -47,6 +42,73 @@ variable "enable_front_container_app" {
 
 variable "api_image" {
   type        = string
-  description = "API container image (e.g., acrappnet9.azurecr.io/app-api:latest). Defaults to a placeholder hello-world image."
+  description = "API container image (e.g., ghcr.io/owner/repo/app-api:latest). Defaults to a placeholder hello-world image."
   default     = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+}
+
+variable "github_username" {
+  type        = string
+  description = "GitHub username for ghcr.io authentication (e.g., github.actor)"
+  default     = ""
+}
+
+variable "github_token" {
+  type        = string
+  description = "GitHub Personal Access Token for ghcr.io authentication"
+  sensitive   = true
+  default     = ""
+}
+
+variable "database_connection_string" {
+  type        = string
+  description = "Neon PostgreSQL connection string"
+  sensitive   = true
+}
+
+variable "storage_images_container_name" {
+  type        = string
+  description = "Azure Blob Storage container name for image uploads"
+  default     = "images"
+}
+
+variable "azure_cdn_url" {
+  type        = string
+  description = "Optional CDN URL for blob storage"
+  default     = ""
+}
+
+variable "jwt_access_token_secret" {
+  type        = string
+  description = "JWT access token secret key"
+  sensitive   = true
+}
+
+variable "jwt_refresh_token_secret" {
+  type        = string
+  description = "JWT refresh token secret key"
+  sensitive   = true
+}
+
+variable "smtp_username" {
+  type        = string
+  description = "SMTP username for email service"
+  sensitive   = true
+}
+
+variable "smtp_password" {
+  type        = string
+  description = "SMTP password for email service"
+  sensitive   = true
+}
+
+variable "turnstile_secret" {
+  type        = string
+  description = "Cloudflare Turnstile secret key"
+  sensitive   = true
+}
+
+variable "allowed_cors_origins" {
+  type        = string
+  description = "Allowed CORS origins (comma-separated). Defaults to static website URL if empty."
+  default     = ""
 }

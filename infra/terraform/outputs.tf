@@ -1,14 +1,10 @@
-output "acr_login_server" {
-  value = azurerm_container_registry.acr.login_server
+output "container_registry" {
+  value       = "ghcr.io"
+  description = "GitHub Container Registry (free for public repositories)"
 }
 
 output "api_fqdn" {
   value = azurerm_container_app.api.latest_revision_fqdn
-}
-
-output "front_fqdn" {
-  value       = length(azurerm_container_app.front) > 0 ? azurerm_container_app.front[0].latest_revision_fqdn : null
-  description = "Front Container App FQDN, null when front app is disabled."
 }
 
 output "static_website_primary_endpoint" {
@@ -36,11 +32,6 @@ output "storage_connection_string" {
 output "resource_group_name" {
   value       = azurerm_resource_group.rg.name
   description = "Set as AZURE_RESOURCE_GROUP."
-}
-
-output "acr_name" {
-  value       = azurerm_container_registry.acr.name
-  description = "Set as AZURE_ACR_NAME (registry name only)."
 }
 
 output "containerapp_api_name" {

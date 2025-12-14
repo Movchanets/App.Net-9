@@ -34,11 +34,9 @@ public static class SeederDB
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
 
-        // застосувати міграції (пропустити під час тестування зі SQLite in-memory)
-        if (!env.IsEnvironment("Testing"))
-        {
-            await dbContext.Database.MigrateAsync();
-        }
+
+        await dbContext.Database.MigrateAsync();
+
 
         // створюємо ролі
         if (!roleManager.Roles.Any())
@@ -108,7 +106,7 @@ public static class SeederDB
                 if (result.Succeeded)
                 {
                     // Тепер, коли EF згенерував Id для admin, створюємо доменного користувача з цим IdentityUserId
-                    var domainAdmin = new User(admin.Id, "Admin", "User", adminEmail );
+                    var domainAdmin = new User(admin.Id, "Admin", "User", adminEmail);
                     userRepository.Add(domainAdmin);
                     admin.DomainUserId = domainAdmin.Id;
                     await userManager.UpdateAsync(admin);

@@ -234,3 +234,125 @@ npm run preview
 - Для CI/CD замініть значення `VITE_*` у середовищі збірки (GitHub Actions, GitLab CI тощо) — Vite підхоплює їх під час збірки.
 
 Файл прикладу змінних створено: `Front/.env.example` (без секретів). Копіюйте його в `.env` і заповнюйте свої значення.
+
+## Деплой на Azure
+
+Проект використовує GitHub Actions для автоматичного деплою на Azure:
+
+### Архітектура деплою
+
+- **Container Apps**: ASP.NET Core API (з HTTP scale-to-zero для економії)
+- **Storage Static Website**: React frontend (CDN-ready)
+- **GitHub Container Registry (ghcr.io)**: Безкоштовне зберігання Docker образів
+- **Neon PostgreSQL**: База даних (external)
+
+### Необхідні GitHub Secrets
+
+```bash
+# Azure credentials
+AZURE_CREDENTIALS                    # Azure service principal JSON
+AZURE_RESOURCE_GROUP                 # rg-appnet9
+AZURE_CONTAINERAPPS_ENVIRONMENT_NAME # cae-appnet9
+AZURE_CONTAINERAPP_API_NAME          # appnet9-api
+AZURE_STORAGE_ACCOUNT_NAME           # stappnet9web
+AZURE_STORAGE_CONTAINER_NAME         # images
+AZURE_LOCATION                       # westeurope
+
+# Database
+DATABASE_CONNECTION_STRING           # Neon PostgreSQL connection string
+
+# Storage (Azure Blob)
+AZURE_STORAGE_CONNECTION_STRING      # Azure Storage connection string
+AZURE_CDN_URL                        # (Optional) CDN endpoint
+
+# JWT
+JWT_ACCESS_TOKEN_SECRET              # Min 32 chars
+JWT_REFRESH_TOKEN_SECRET             # Min 32 chars
+
+# Email
+SMTP_USERNAME                        # SMTP email
+SMTP_PASSWORD                        # SMTP password
+
+# Security
+TURNSTILE_SECRET                     # Cloudflare Turnstile secret key
+ALLOWED_CORS_ORIGINS                 # https://stappnet9web.z6.web.core.windows.net
+
+# Frontend build
+VITE_API_URL                         # https://<containerapp-fqdn>/api
+VITE_TURNSTILE_SITEKEY              # Cloudflare Turnstile site key
+```
+
+### Ручний деплой
+
+Запустіть workflow вручну через GitHub Actions (вкладка Actions → "Manual Deploy to Azure"):
+
+```bash
+# Або через GitHub CLI
+gh workflow run deploy.yml
+```
+
+### Container Registry
+
+Проект використовує **GitHub Container Registry (ghcr.io)** замість Azure Container Registry для економії:
+
+- ✅ **Безкоштовно** для публічних репозиторіїв
+- ✅ Необмежене сховище для публічних образів
+- ✅ Автоматична авторизація через `GITHUB_TOKEN`
+- ✅ Image URL: `ghcr.io/movchanets/app.net-9/app-api:latest`
+
+**Azure Container Registry видалено** — економія $5/місяць.
+
+### Scale-to-zero
+
+Container App налаштовано на автоматичне масштабування:
+
+- **Min replicas**: 0 (зупиняється після 5-10 хвилин без трафіку)
+- **Max replicas**: 1
+- **HTTP scaling rule**: 10 concurrent requests
+- **Cold start**: ~3-10 секунд при першому запиті
+
+Перевірити кількість реплік:
+
+```bash
+az containerapp revision list -n appnet9-api -g rg-appnet9 \
+  --query "[?properties.active].{Name:name, Replicas:properties.replicas}" -o table
+```
+
+### Terraform (Infrastructure as Code)
+
+Інфраструктура описана в `infra/terraform/`:
+
+```bash
+cd infra/terraform
+
+# Ініціалізація
+terraform init
+
+# Планування змін
+terraform plan
+
+# Застосування інфраструктури
+terraform apply
+```
+
+**Примітка**: Terraform використовує GitHub Container Registry. Потрібні змінні:
+
+- `github_username` (наприклад, `movchanets`)
+- `github_token` (Personal Access Token з `read:packages` scope)
+
+### Azure CLI команди для діагностики
+
+```bash
+# Перевірити статус Container App
+az containerapp show -n appnet9-api -g rg-appnet9 \
+  --query "properties.{runningStatus:runningStatus, fqdn:configuration.ingress.fqdn}" -o json
+
+# Переглянути логи
+az containerapp logs show -n appnet9-api -g rg-appnet9 --tail 50 --type console
+
+# Оновити env vars
+az containerapp update -n appnet9-api -g rg-appnet9 \
+  --set-env-vars "Storage__Provider=azure"
+```
+
+Детальніше про Azure команди дивіться в `.github/copilot-instructions.md`.

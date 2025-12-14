@@ -1,8 +1,16 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 import type { TokenResponse } from './authApi';
 
 // Prefer build-time env, fallback to relative API path if missing
-const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? "/api";
+const rawEnvUrl = import.meta.env.VITE_API_URL;
+let BASE_URL: string;
+if (rawEnvUrl && typeof rawEnvUrl === 'string' && rawEnvUrl.trim().length > 0) {
+  // Normalize and ensure the base points to the API root (include '/api')
+  const trimmed = rawEnvUrl.replace(/\/+$/, '');
+  BASE_URL = trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+} else {
+  BASE_URL = '/api';
+}
 
 const axiosClient = axios.create({
   baseURL: BASE_URL, // ⚡ твій бекенд API
@@ -131,8 +139,9 @@ axiosClient.interceptors.request.use(async (config) => {
   }
 
   const token = localStorage.getItem("accessToken");
-  if (token && config.headers) {
-    (config.headers as any).Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers = AxiosHeaders.from(config.headers);
+    config.headers.set('Authorization', `Bearer ${token}`);
   }
   return config;
 });
@@ -198,7 +207,8 @@ axiosClient.interceptors.response.use(
           }
 
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+          originalRequest.headers = AxiosHeaders.from(originalRequest.headers);
+          originalRequest.headers.set('Authorization', `Bearer ${newAccess}`);
           return axiosClient(originalRequest);
         }
       } catch (refreshError) {
