@@ -339,8 +339,11 @@ public class UserService : IUserService
 
 	public async Task<List<UserDto>> GetAllUsersAsync()
 	{
+		// Materialize the users list first to avoid "command already in progress" error
+		var users = await _userManager.Users.ToListAsync();
+
 		var list = new List<UserDto>();
-		foreach (var user in _userManager.Users)
+		foreach (var user in users)
 		{
 			var dto = await TryBuildUserDtoAsync(user);
 			if (dto != null)
