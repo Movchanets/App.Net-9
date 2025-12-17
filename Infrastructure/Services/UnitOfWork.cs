@@ -19,10 +19,7 @@ public class UnitOfWork : IUnitOfWork
 
 	public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
 	{
-		if (_db.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
-		{
-			return Task.FromResult<IDbContextTransaction>(new NoOpTransaction());
-		}
+	
 		return _db.Database.BeginTransactionAsync(cancellationToken);
 	}
 

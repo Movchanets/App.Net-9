@@ -48,6 +48,12 @@ public class Category : BaseEntity<Guid>
 		MarkAsUpdated();
 	}
 
+	public void UpdateDescription(string? description)
+	{
+		Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+		MarkAsUpdated();
+	}
+
 	public void SetParent(Category? parent)
 	{
 		if (parent != null && parent.Id == Id)
