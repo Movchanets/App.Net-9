@@ -11,6 +11,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
         builder.HasKey(p => p.Id);
 
+        builder.HasOne(p => p.Store)
+            .WithMany(s => s.Products)
+            .HasForeignKey(p => p.StoreId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(200);

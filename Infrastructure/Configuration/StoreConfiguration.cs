@@ -11,6 +11,9 @@ public class StoreConfiguration : IEntityTypeConfiguration<Store>
 		builder.ToTable("Stores");
 		builder.HasKey(s => s.Id);
 
+		builder.Metadata.FindNavigation(nameof(Store.Products))?
+			.SetPropertyAccessMode(PropertyAccessMode.Field);
+
 		builder.Property(s => s.Name)
 			.IsRequired()
 			.HasMaxLength(200);

@@ -2,7 +2,10 @@ namespace Domain.Entities;
 
 public class Product : BaseEntity<Guid>
 {
-    public string Name { get; private set; }
+    public Guid? StoreId { get; private set; }
+    public virtual Store? Store { get; private set; }
+
+    public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public string? BaseImageUrl { get; private set; }
 
@@ -27,6 +30,13 @@ public class Product : BaseEntity<Guid>
         Id = Guid.NewGuid();
         Name = name.Trim();
         Description = description?.Trim();
+    }
+
+    internal void AssignToStore(Store store)
+    {
+        Store = store ?? throw new ArgumentNullException(nameof(store));
+        StoreId = store.Id;
+        MarkAsUpdated();
     }
 
     public void UpdateDescription(string? description)

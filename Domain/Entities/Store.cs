@@ -4,8 +4,11 @@ namespace Domain.Entities;
 
 public class Store : BaseEntity<Guid>
 {
-	public string Name { get; private set; }
-	public string Slug { get; private set; }
+	private readonly List<Product> _products = new();
+	public virtual IReadOnlyCollection<Product> Products => _products.AsReadOnly();
+
+	public string Name { get; private set; } = string.Empty;
+	public string Slug { get; private set; } = string.Empty;
 	public string? Description { get; private set; }
 	public Guid UserId { get; private set; }
 	public virtual User? User { get; private set; }
@@ -83,6 +86,23 @@ public class Store : BaseEntity<Guid>
 		}
 
 		IsSuspended = false;
+		MarkAsUpdated();
+	}
+
+	public void AddProduct(Product product)
+	{
+		if (product is null)
+		{
+			throw new ArgumentNullException(nameof(product));
+		}
+
+		if (_products.Any(p => p.Id == product.Id))
+		{
+			return;
+		}
+
+		product.AssignToStore(this);
+		_products.Add(product);
 		MarkAsUpdated();
 	}
 
