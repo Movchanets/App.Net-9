@@ -32,6 +32,17 @@ public class Product : BaseEntity<Guid>
         Description = description?.Trim();
     }
 
+    public void Rename(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
+        Name = name.Trim();
+        MarkAsUpdated();
+    }
+
     internal void AssignToStore(Store store)
     {
         Store = store ?? throw new ArgumentNullException(nameof(store));
