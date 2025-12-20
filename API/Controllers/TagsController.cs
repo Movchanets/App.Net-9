@@ -1,4 +1,7 @@
 using Application.Commands.Tag.CreateTag;
+using Application.Queries.Catalog.GetTagById;
+using Application.Queries.Catalog.GetTagBySlug;
+using Application.Queries.Catalog.GetTags;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +18,42 @@ public sealed class TagsController : ControllerBase
 	public TagsController(IMediator mediator)
 	{
 		_mediator = mediator;
+	}
+
+	/// <summary>
+	/// Отримати список тегів
+	/// </summary>
+	[HttpGet]
+	[AllowAnonymous]
+	public async Task<IActionResult> GetAll()
+	{
+		var result = await _mediator.Send(new GetTagsQuery());
+		if (!result.IsSuccess) return BadRequest(result);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Отримати тег по Id
+	/// </summary>
+	[HttpGet("{id:guid}")]
+	[AllowAnonymous]
+	public async Task<IActionResult> GetById([FromRoute] Guid id)
+	{
+		var result = await _mediator.Send(new GetTagByIdQuery(id));
+		if (!result.IsSuccess) return NotFound(result);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Отримати тег по slug
+	/// </summary>
+	[HttpGet("slug/{slug}")]
+	[AllowAnonymous]
+	public async Task<IActionResult> GetBySlug([FromRoute] string slug)
+	{
+		var result = await _mediator.Send(new GetTagBySlugQuery(slug));
+		if (!result.IsSuccess) return NotFound(result);
+		return Ok(result);
 	}
 
 	/// <summary>
