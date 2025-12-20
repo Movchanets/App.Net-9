@@ -7,6 +7,7 @@ namespace Domain.Interfaces.Repositories;
 /// </summary>
 public interface ISkuRepository
 {
+	Task<SkuEntity?> GetByIdAsync(Guid id);
 	Task<SkuEntity?> GetBySkuCodeAsync(string skuCode);
 	Task<IEnumerable<SkuEntity>> GetByProductIdAsync(Guid productId);
 	Task<IEnumerable<SkuEntity>> GetByJsonAttributeAsync(string key, string value);

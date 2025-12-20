@@ -17,6 +17,19 @@ public class SkuRepository : ISkuRepository
 		_db = db;
 	}
 
+	public async Task<SkuEntity?> GetByIdAsync(Guid id)
+	{
+		if (id == Guid.Empty)
+		{
+			return null;
+		}
+
+		return await _db.Skus
+			.Include(s => s.Product)
+				.ThenInclude(p => p.Store)
+			.FirstOrDefaultAsync(s => s.Id == id);
+	}
+
 	public async Task<SkuEntity?> GetBySkuCodeAsync(string skuCode)
 	{
 		if (string.IsNullOrWhiteSpace(skuCode))
@@ -27,6 +40,7 @@ public class SkuRepository : ISkuRepository
 		var normalized = skuCode.Trim();
 		return await _db.Skus
 			.Include(s => s.Product)
+				.ThenInclude(p => p.Store)
 			.FirstOrDefaultAsync(s => s.SkuCode == normalized);
 	}
 
@@ -35,6 +49,7 @@ public class SkuRepository : ISkuRepository
 		return await _db.Skus
 			.Where(s => s.ProductId == productId)
 			.Include(s => s.Product)
+				.ThenInclude(p => p.Store)
 			.ToListAsync();
 	}
 
