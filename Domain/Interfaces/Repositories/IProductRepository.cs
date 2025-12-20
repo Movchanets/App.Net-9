@@ -13,6 +13,6 @@ public interface IProductRepository
 	Task<Product?> GetBySkuCodeAsync(string skuCode);
 
 	void Add(Product product);
-	void Update(Product product);
+
 	void Delete(Product product);
 }

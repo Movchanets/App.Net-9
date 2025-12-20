@@ -63,10 +63,7 @@ public class ProductRepository : IProductRepository
 		_db.Products.Add(product);
 	}
 
-	public void Update(Product product)
-	{
-		_db.Products.Update(product);
-	}
+
 
 	public void Delete(Product product)
 	{
