@@ -2,6 +2,7 @@ using Application.DTOs;
 using AutoMapper;
 using Application.Models;
 using Domain.Entities;
+using System.Text.Json;
 
 namespace Application.Mapping;
 
@@ -38,5 +39,68 @@ public class AutoMapperProfile : Profile
                 ctx.Items.TryGetValue("AvatarUrl", out var avatarUrl) ? avatarUrl as string : null));
 
         // Mapping from UserDto to Domain User is not direct; handlers should coordinate domain + identity updates.
+
+        // Catalog DTO mappings
+        CreateMap<Store, StoreSummaryDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("Slug", opt => opt.MapFrom(src => src.Slug))
+            .ForCtorParam("Description", opt => opt.MapFrom(src => src.Description))
+            .ForCtorParam("IsVerified", opt => opt.MapFrom(src => src.IsVerified));
+
+        CreateMap<Store, StoreDetailsDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("Slug", opt => opt.MapFrom(src => src.Slug))
+            .ForCtorParam("Description", opt => opt.MapFrom(src => src.Description))
+            .ForCtorParam("IsVerified", opt => opt.MapFrom(src => src.IsVerified))
+            .ForCtorParam("IsSuspended", opt => opt.MapFrom(src => src.IsSuspended));
+
+        CreateMap<Category, CategoryDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("Slug", opt => opt.MapFrom(src => src.Slug))
+            .ForCtorParam("Description", opt => opt.MapFrom(src => src.Description))
+            .ForCtorParam("ParentCategoryId", opt => opt.MapFrom(src => src.ParentCategoryId));
+
+        CreateMap<Tag, TagDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("Slug", opt => opt.MapFrom(src => src.Slug))
+            .ForCtorParam("Description", opt => opt.MapFrom(src => src.Description));
+
+        CreateMap<SkuEntity, SkuDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("SkuCode", opt => opt.MapFrom(src => src.SkuCode))
+            .ForCtorParam("Price", opt => opt.MapFrom(src => src.Price))
+            .ForCtorParam("StockQuantity", opt => opt.MapFrom(src => src.StockQuantity))
+            .ForCtorParam("Attributes", opt => opt.MapFrom(src => DeserializeAttributes(src.Attributes)));
+
+        CreateMap<Product, ProductSummaryDto>()
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("StoreId", opt => opt.MapFrom(src => src.StoreId))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("BaseImageUrl", opt => opt.MapFrom(src => src.BaseImageUrl))
+            .ForCtorParam("MinPrice", opt => opt.MapFrom(src => src.Skus.Count == 0 ? (decimal?)null : src.Skus.Min(s => s.Price)))
+            .ForCtorParam("InStock", opt => opt.MapFrom(src => src.Skus.Any(s => s.StockQuantity > 0)))
+            .ForCtorParam("Categories", opt => opt.MapFrom(src => src.ProductCategories
+                .Where(pc => pc.Category != null)
+                .Select(pc => pc.Category!)
+                .ToList()))
+            .ForCtorParam("Tags", opt => opt.MapFrom(src => src.ProductTags
+                .Where(pt => pt.Tag != null)
+                .Select(pt => pt.Tag!)
+                .ToList()));
+    }
+
+    private static Dictionary<string, object?>? DeserializeAttributes(JsonDocument? attributes)
+    {
+        if (attributes is null)
+        {
+            return null;
+        }
+
+        var dictionary = JsonSerializer.Deserialize<Dictionary<string, object?>>(attributes.RootElement.GetRawText());
+        return dictionary;
     }
 }
