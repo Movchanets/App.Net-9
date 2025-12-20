@@ -51,16 +51,25 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
 				return new ServiceResponse<Guid>(false, "Store is suspended");
 			}
 
-			var category = await _categoryRepository.GetByIdAsync(request.CategoryId);
-			if (category == null)
-			{
-				_logger.LogWarning("Category {CategoryId} not found", request.CategoryId);
-				return new ServiceResponse<Guid>(false, "Category not found");
-			}
-
 			var product = new Domain.Entities.Product(request.Name, request.Description);
 			store.AddProduct(product);
-			product.AddCategory(category);
+
+			var categoryIds = (request.CategoryIds ?? new List<Guid>())
+				.Where(x => x != Guid.Empty)
+				.Distinct()
+				.ToList();
+
+			foreach (var categoryId in categoryIds)
+			{
+				var category = await _categoryRepository.GetByIdAsync(categoryId);
+				if (category == null)
+				{
+					_logger.LogWarning("Category {CategoryId} not found", categoryId);
+					return new ServiceResponse<Guid>(false, "Category not found");
+				}
+
+				product.AddCategory(category);
+			}
 
 			if (request.TagIds is { Count: > 0 })
 			{
