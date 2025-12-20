@@ -58,6 +58,7 @@ public static class SeederDB
                 await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "stores.suspend");
                 await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "stores.delete");
                 await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "categories.manage");
+                await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "tags.manage");
                 await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "payouts.read.all");
                 await AddClaimToRoleIfNotExists(roleManager, adminRole, "permission", "payouts.process");
             }
