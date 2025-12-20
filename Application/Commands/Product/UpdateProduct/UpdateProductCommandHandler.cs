@@ -2,6 +2,7 @@ using Application.DTOs;
 using Application.Interfaces;
 using Domain.Interfaces.Repositories;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Application.Commands.Product.UpdateProduct;
@@ -51,19 +52,28 @@ public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductC
 				return new ServiceResponse(false, "Product not found");
 			}
 
-			var category = await _categoryRepository.GetByIdAsync(request.CategoryId);
-			if (category == null)
-			{
-				_logger.LogWarning("Category {CategoryId} not found", request.CategoryId);
-				return new ServiceResponse(false, "Category not found");
-			}
+			var categoryIds = (request.CategoryIds ?? new List<Guid>())
+				.Where(x => x != Guid.Empty)
+				.Distinct()
+				.ToList();
 
-			// Replace categories (for now we keep a single category per product)
+			// Replace categories
 			foreach (var categoryId in product.ProductCategories.Select(pc => pc.CategoryId).ToList())
 			{
 				product.RemoveCategory(categoryId);
 			}
-			product.AddCategory(category);
+
+			foreach (var categoryId in categoryIds)
+			{
+				var category = await _categoryRepository.GetByIdAsync(categoryId);
+				if (category == null)
+				{
+					_logger.LogWarning("Category {CategoryId} not found", categoryId);
+					return new ServiceResponse(false, "Category not found");
+				}
+
+				product.AddCategory(category);
+			}
 
 			// Replace tags
 			foreach (var tagId in product.ProductTags.Select(pt => pt.TagId).ToList())
@@ -89,11 +99,28 @@ public sealed class UpdateProductCommandHandler : IRequestHandler<UpdateProductC
 			product.Rename(request.Name);
 			product.UpdateDescription(request.Description);
 
-			_productRepository.Update(product);
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
 			_logger.LogInformation("Product {ProductId} updated successfully", product.Id);
 			return new ServiceResponse(true, "Product updated successfully");
+		}
+		catch (DbUpdateConcurrencyException ex)
+		{
+			var entryInfo = ex.Entries.Count == 0
+				? "<none>"
+				: string.Join(", ", ex.Entries.Select(e =>
+				{
+					var key = e.Properties
+						.Where(p => p.Metadata.IsPrimaryKey())
+						.Select(p => $"{p.Metadata.Name}={p.CurrentValue}")
+						.DefaultIfEmpty("<no-pk>")
+						.First();
+
+					return $"{e.Metadata.ClrType.Name}({key})";
+				}));
+
+			_logger.LogError(ex, "Optimistic concurrency error updating product {ProductId}. Entries: {Entries}", request.ProductId, entryInfo);
+			return new ServiceResponse(false, $"Error: {ex.Message}. Entries: {entryInfo}");
 		}
 		catch (Exception ex)
 		{

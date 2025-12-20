@@ -8,6 +8,18 @@ public sealed record UpdateProductCommand(
 	Guid ProductId,
 	string Name,
 	string? Description,
-	Guid CategoryId,
+	List<Guid> CategoryIds,
 	List<Guid>? TagIds = null
-) : IRequest<ServiceResponse>;
+) : IRequest<ServiceResponse>
+{
+	public UpdateProductCommand(
+		Guid UserId,
+		Guid ProductId,
+		string Name,
+		string? Description,
+		Guid CategoryId,
+		List<Guid>? TagIds = null)
+		: this(UserId, ProductId, Name, Description, new List<Guid> { CategoryId }, TagIds)
+	{
+	}
+}
