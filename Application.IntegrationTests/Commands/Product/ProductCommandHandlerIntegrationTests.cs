@@ -60,19 +60,21 @@ public class ProductCommandHandlerIntegrationTests : TestBase
 
 		var storeRepo = new StoreRepository(DbContext);
 		var productRepo = new ProductRepository(DbContext);
+		var userRepo = new UserRepository(DbContext);
 		var categoryRepo = new CategoryRepository(DbContext);
 		var tagRepo = new TagRepository(DbContext);
 		var uow = new UnitOfWork(DbContext);
 		var handler = new CreateProductCommandHandler(
 			productRepo,
 			storeRepo,
+			userRepo,
 			categoryRepo,
 			tagRepo,
 			uow,
 			NullLogger<CreateProductCommandHandler>.Instance);
 
 		var cmd = new CreateProductCommand(
-			user.Id,
+			user.IdentityUserId,
 			"iPhone",
 			"desc",
 			CategoryIds: new List<Guid> { category1.Id, category2.Id },
@@ -117,18 +119,20 @@ public class ProductCommandHandlerIntegrationTests : TestBase
 
 		var storeRepo = new StoreRepository(DbContext);
 		var productRepo = new ProductRepository(DbContext);
+		var userRepo = new UserRepository(DbContext);
 		var categoryRepo = new CategoryRepository(DbContext);
 		var tagRepo = new TagRepository(DbContext);
 		var uow = new UnitOfWork(DbContext);
 		var handler = new CreateProductCommandHandler(
 			productRepo,
 			storeRepo,
+			userRepo,
 			categoryRepo,
 			tagRepo,
 			uow,
 			NullLogger<CreateProductCommandHandler>.Instance);
 
-		var cmd = new CreateProductCommand(user.Id, "iPhone", null, category.Id, 1, 1);
+		var cmd = new CreateProductCommand(user.IdentityUserId, "iPhone", null, category.Id, 1, 1);
 
 		// Act
 		var res = await handler.Handle(cmd, CancellationToken.None);
@@ -151,6 +155,7 @@ public class ProductCommandHandlerIntegrationTests : TestBase
 
 		var storeRepo = new StoreRepository(DbContext);
 		var productRepo = new ProductRepository(DbContext);
+		var userRepo = new UserRepository(DbContext);
 		var categoryRepo = new CategoryRepository(DbContext);
 		var tagRepo = new TagRepository(DbContext);
 		var uow = new UnitOfWork(DbContext);
@@ -158,13 +163,14 @@ public class ProductCommandHandlerIntegrationTests : TestBase
 		var createHandler = new CreateProductCommandHandler(
 			productRepo,
 			storeRepo,
+			userRepo,
 			categoryRepo,
 			tagRepo,
 			uow,
 			NullLogger<CreateProductCommandHandler>.Instance);
 
 		var createRes = await createHandler.Handle(
-			new CreateProductCommand(user.Id, "To Delete", null, category.Id, 10, 2),
+			new CreateProductCommand(user.IdentityUserId, "To Delete", null, category.Id, 10, 2),
 			CancellationToken.None);
 
 		createRes.IsSuccess.Should().BeTrue();

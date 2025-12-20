@@ -11,6 +11,7 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
 {
 	private readonly IProductRepository _productRepository;
 	private readonly IStoreRepository _storeRepository;
+	private readonly IUserRepository _userRepository;
 	private readonly ICategoryRepository _categoryRepository;
 	private readonly ITagRepository _tagRepository;
 	private readonly IUnitOfWork _unitOfWork;
@@ -19,6 +20,7 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
 	public CreateProductCommandHandler(
 		IProductRepository productRepository,
 		IStoreRepository storeRepository,
+		IUserRepository userRepository,
 		ICategoryRepository categoryRepository,
 		ITagRepository tagRepository,
 		IUnitOfWork unitOfWork,
@@ -26,6 +28,7 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
 	{
 		_productRepository = productRepository;
 		_storeRepository = storeRepository;
+		_userRepository = userRepository;
 		_categoryRepository = categoryRepository;
 		_tagRepository = tagRepository;
 		_unitOfWork = unitOfWork;
@@ -38,10 +41,17 @@ public sealed class CreateProductCommandHandler : IRequestHandler<CreateProductC
 
 		try
 		{
-			var store = await _storeRepository.GetByUserIdAsync(request.UserId);
+			var domainUser = await _userRepository.GetByIdentityUserIdAsync(request.UserId);
+			if (domainUser is null)
+			{
+				_logger.LogWarning("Domain user for identity {UserId} not found", request.UserId);
+				return new ServiceResponse<Guid>(false, "User not found");
+			}
+
+			var store = await _storeRepository.GetByUserIdAsync(domainUser.Id);
 			if (store == null)
 			{
-				_logger.LogWarning("Store for user {UserId} not found", request.UserId);
+				_logger.LogWarning("Store for user {UserId} not found", domainUser.Id);
 				return new ServiceResponse<Guid>(false, "Store not found");
 			}
 

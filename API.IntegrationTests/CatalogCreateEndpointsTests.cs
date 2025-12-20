@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,6 +10,7 @@ using Domain.Constants;
 using Domain.Entities;
 using FluentAssertions;
 using Infrastructure;
+using Infrastructure.Initializer;
 using Infrastructure.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -71,6 +73,27 @@ public class CatalogCreateEndpointsTests : IClassFixture<TestWebApplicationFacto
 		resp.EnsureSuccessStatusCode();
 		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
 		return json.GetProperty("payload").GetProperty("id").GetGuid();
+	}
+
+	private async Task<Guid> GetDomainUserIdByEmail(string email)
+	{
+		using var scope = _factory.Services.CreateScope();
+		var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+		var appUser = await userManager.FindByEmailAsync(email);
+		appUser.Should().NotBeNull($"Expected identity user '{email}' to exist");
+
+		if (appUser!.DomainUserId is Guid domainUserId)
+		{
+			var exists = await db.DomainUsers.AnyAsync(u => u.Id == domainUserId);
+			exists.Should().BeTrue("Domain user should exist for the identity user");
+			return domainUserId;
+		}
+
+		var domainUser = await db.DomainUsers.FirstOrDefaultAsync(u => u.IdentityUserId == appUser.Id);
+		domainUser.Should().NotBeNull("Domain user should be created during registration");
+		return domainUser!.Id;
 	}
 
 	private async Task EnsureStoreForUser(Guid domainUserId)
@@ -145,8 +168,7 @@ public class CatalogCreateEndpointsTests : IClassFixture<TestWebApplicationFacto
 		// Make the user a seller, then login to get a token with seller permissions.
 		await EnsureUserInRole(email, Roles.Seller);
 		var sellerToken = await LoginAndGetAccessToken(email, password);
-
-		var sellerUserId = await GetMyDomainUserId(sellerToken);
+		var sellerUserId = await GetDomainUserIdByEmail(email);
 		await EnsureStoreForUser(sellerUserId);
 
 		var categoryId = await CreateCategoryAsAdmin(adminToken);
@@ -170,5 +192,78 @@ public class CatalogCreateEndpointsTests : IClassFixture<TestWebApplicationFacto
 		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
 		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
 		json.GetProperty("payload").GetGuid().Should().NotBeEmpty();
+	}
+
+	[Fact]
+	public async Task Seeder_InTesting_SeedsDemoCatalogData()
+	{
+		using var scope = _factory.Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+		var adminUser = await db.DomainUsers.FirstOrDefaultAsync(u => u.Email == "admin@example.com");
+		adminUser.Should().NotBeNull("Seeder should create the admin domain user in a fresh Testing database");
+
+		var store = await db.Stores.FirstOrDefaultAsync(s => s.UserId == adminUser!.Id);
+		store.Should().NotBeNull("Seeder should create an admin store in Development/Testing");
+		store!.IsVerified.Should().BeTrue("Seeder verifies the admin demo store");
+
+		var categorySlugs = await db.Categories
+			.Where(c => c.Slug == "electronics" || c.Slug == "accessories" || c.Slug == "clothing")
+			.Select(c => c.Slug)
+			.ToListAsync();
+		categorySlugs.Should().BeEquivalentTo(new[] { "electronics", "accessories", "clothing" });
+
+		var tagSlugs = await db.Tags
+			.Where(t => t.Slug == "new" || t.Slug == "popular" || t.Slug == "sale")
+			.Select(t => t.Slug)
+			.ToListAsync();
+		tagSlugs.Should().BeEquivalentTo(new[] { "new", "popular", "sale" });
+
+		var productNames = new[] { "Phone Case (Demo)", "Hoodie (Demo)", "USB-C Cable (Demo)" };
+		var demoProducts = await db.Products
+			.Where(p => p.StoreId == store.Id && productNames.Contains(p.Name))
+			.Include(p => p.Skus)
+			.Include(p => p.Gallery)
+			.ToListAsync();
+
+		demoProducts.Should().HaveCount(3);
+		demoProducts.All(p => !string.IsNullOrWhiteSpace(p.BaseImageUrl)).Should().BeTrue();
+		demoProducts.Sum(p => p.Skus.Count).Should().BeGreaterThanOrEqualTo(3);
+		demoProducts.Sum(p => p.Gallery.Count).Should().BeGreaterThanOrEqualTo(5);
+
+		var seededMediaCount = await db.MediaImages.CountAsync(m => m.StorageKey.StartsWith("seed/catalog/"));
+		seededMediaCount.Should().Be(5);
+	}
+
+	[Fact]
+	public async Task Seeder_Rerun_IsIdempotent_ForDemoCatalogData()
+	{
+		using var scope = _factory.Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+		var adminUser = await db.DomainUsers.FirstOrDefaultAsync(u => u.Email == "admin@example.com");
+		adminUser.Should().NotBeNull();
+		var store = await db.Stores.FirstOrDefaultAsync(s => s.UserId == adminUser!.Id);
+		store.Should().NotBeNull();
+
+		var initialCategoryCount = await db.Categories.CountAsync(c => c.Slug == "electronics" || c.Slug == "accessories" || c.Slug == "clothing");
+		var initialTagCount = await db.Tags.CountAsync(t => t.Slug == "new" || t.Slug == "popular" || t.Slug == "sale");
+		var initialSeededMediaCount = await db.MediaImages.CountAsync(m => m.StorageKey.StartsWith("seed/catalog/"));
+		var initialDemoProductsCount = await db.Products.CountAsync(p => p.StoreId == store!.Id &&
+			(p.Name == "Phone Case (Demo)" || p.Name == "Hoodie (Demo)" || p.Name == "USB-C Cable (Demo)"));
+
+		var appBuilder = new ApplicationBuilderWrapper(_factory.Services);
+		await SeederDB.SeedDataAsync(appBuilder);
+
+		var afterCategoryCount = await db.Categories.CountAsync(c => c.Slug == "electronics" || c.Slug == "accessories" || c.Slug == "clothing");
+		var afterTagCount = await db.Tags.CountAsync(t => t.Slug == "new" || t.Slug == "popular" || t.Slug == "sale");
+		var afterSeededMediaCount = await db.MediaImages.CountAsync(m => m.StorageKey.StartsWith("seed/catalog/"));
+		var afterDemoProductsCount = await db.Products.CountAsync(p => p.StoreId == store!.Id &&
+			(p.Name == "Phone Case (Demo)" || p.Name == "Hoodie (Demo)" || p.Name == "USB-C Cable (Demo)"));
+
+		afterCategoryCount.Should().Be(initialCategoryCount);
+		afterTagCount.Should().Be(initialTagCount);
+		afterSeededMediaCount.Should().Be(initialSeededMediaCount);
+		afterDemoProductsCount.Should().Be(initialDemoProductsCount);
 	}
 }

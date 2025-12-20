@@ -11,6 +11,7 @@ public class CreateProductCommandHandlerTests
 {
 	private readonly Mock<IProductRepository> _productRepository = new();
 	private readonly Mock<IStoreRepository> _storeRepository = new();
+	private readonly Mock<IUserRepository> _userRepository = new();
 	private readonly Mock<ICategoryRepository> _categoryRepository = new();
 	private readonly Mock<ITagRepository> _tagRepository = new();
 	private readonly Mock<IUnitOfWork> _unitOfWork = new();
@@ -20,28 +21,42 @@ public class CreateProductCommandHandlerTests
 		=> new(
 			_productRepository.Object,
 			_storeRepository.Object,
+			_userRepository.Object,
 			_categoryRepository.Object,
 			_tagRepository.Object,
 			_unitOfWork.Object,
 			_logger.Object);
 
+	private static Domain.Entities.User CreateDomainUser(Guid identityUserId, Guid domainUserId)
+	{
+		var user = new Domain.Entities.User(identityUserId, email: $"user_{identityUserId:N}@example.com");
+		// Domain entity IDs are set by EF; tests need a deterministic ID.
+		typeof(Domain.Entities.BaseEntity<Guid>)
+			.GetProperty(nameof(Domain.Entities.BaseEntity<Guid>.Id))
+			?.SetValue(user, domainUserId);
+		return user;
+	}
+
 	[Fact]
 	public async Task Handle_WhenValidRequest_CreatesProductWithBaseSku()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		var store = Domain.Entities.Store.Create(userId, "My Store", null);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = CreateDomainUser(identityUserId, domainUserId);
+		var store = Domain.Entities.Store.Create(domainUserId, "My Store", null);
 		var category = Domain.Entities.Category.Create("Electronics");
 		var tag = Domain.Entities.Tag.Create("Hot");
 
-		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync(store);
+		_userRepository.Setup(x => x.GetByIdentityUserIdAsync(identityUserId)).ReturnsAsync(domainUser);
+		_storeRepository.Setup(x => x.GetByUserIdAsync(domainUserId)).ReturnsAsync(store);
 		_categoryRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(category);
 		_tagRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(tag);
 		_unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
 		var sut = CreateSut();
 		var cmd = new CreateProductCommand(
-			userId,
+			identityUserId,
 			"iPhone",
 			"desc",
 			Guid.NewGuid(),
@@ -64,11 +79,14 @@ public class CreateProductCommandHandlerTests
 	public async Task Handle_WhenStoreNotFound_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync((Domain.Entities.Store?)null);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = CreateDomainUser(identityUserId, domainUserId);
+		_userRepository.Setup(x => x.GetByIdentityUserIdAsync(identityUserId)).ReturnsAsync(domainUser);
+		_storeRepository.Setup(x => x.GetByUserIdAsync(domainUserId)).ReturnsAsync((Domain.Entities.Store?)null);
 
 		var sut = CreateSut();
-		var cmd = new CreateProductCommand(userId, "iPhone", null, Guid.NewGuid(), 1, 0);
+		var cmd = new CreateProductCommand(identityUserId, "iPhone", null, Guid.NewGuid(), 1, 0);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -83,13 +101,16 @@ public class CreateProductCommandHandlerTests
 	public async Task Handle_WhenCategoryNotFound_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		var store = Domain.Entities.Store.Create(userId, "My Store", null);
-		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync(store);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = CreateDomainUser(identityUserId, domainUserId);
+		var store = Domain.Entities.Store.Create(domainUserId, "My Store", null);
+		_userRepository.Setup(x => x.GetByIdentityUserIdAsync(identityUserId)).ReturnsAsync(domainUser);
+		_storeRepository.Setup(x => x.GetByUserIdAsync(domainUserId)).ReturnsAsync(store);
 		_categoryRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Domain.Entities.Category?)null);
 
 		var sut = CreateSut();
-		var cmd = new CreateProductCommand(userId, "iPhone", null, Guid.NewGuid(), 1, 0);
+		var cmd = new CreateProductCommand(identityUserId, "iPhone", null, Guid.NewGuid(), 1, 0);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -104,15 +125,18 @@ public class CreateProductCommandHandlerTests
 	public async Task Handle_WhenTagNotFound_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		var store = Domain.Entities.Store.Create(userId, "My Store", null);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = CreateDomainUser(identityUserId, domainUserId);
+		var store = Domain.Entities.Store.Create(domainUserId, "My Store", null);
 		var category = Domain.Entities.Category.Create("Electronics");
-		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync(store);
+		_userRepository.Setup(x => x.GetByIdentityUserIdAsync(identityUserId)).ReturnsAsync(domainUser);
+		_storeRepository.Setup(x => x.GetByUserIdAsync(domainUserId)).ReturnsAsync(store);
 		_categoryRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync(category);
 		_tagRepository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((Domain.Entities.Tag?)null);
 
 		var sut = CreateSut();
-		var cmd = new CreateProductCommand(userId, "iPhone", null, Guid.NewGuid(), 1, 0, TagIds: new List<Guid> { Guid.NewGuid() });
+		var cmd = new CreateProductCommand(identityUserId, "iPhone", null, Guid.NewGuid(), 1, 0, TagIds: new List<Guid> { Guid.NewGuid() });
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);

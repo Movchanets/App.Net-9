@@ -1,10 +1,11 @@
 using Application.Commands.Tag.CreateTag;
 using Application.Interfaces;
-using Domain.Entities;
 using Domain.Interfaces.Repositories;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+
+using DomainTag = Domain.Entities.Tag;
 
 namespace Application.Tests.Commands.Tag;
 
@@ -20,15 +21,15 @@ public class CreateTagCommandHandlerTests
 
 		tagRepository
 			.Setup(x => x.GetBySlugAsync(It.IsAny<string>()))
-			.ReturnsAsync((Tag?)null);
+			.ReturnsAsync((DomainTag?)null);
 
 		tagRepository
-			.Setup(x => x.Add(It.IsAny<Tag>()))
+			.Setup(x => x.Add(It.IsAny<DomainTag>()))
 			.Verifiable();
 
 		unitOfWork
 			.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-			.Returns(Task.CompletedTask);
+			.ReturnsAsync(1);
 
 		var handler = new CreateTagCommandHandler(tagRepository.Object, unitOfWork.Object, logger.Object);
 
@@ -41,7 +42,7 @@ public class CreateTagCommandHandlerTests
 		result.IsSuccess.Should().BeTrue();
 		result.Payload.Should().NotBeEmpty();
 		tagRepository.Verify(x => x.GetBySlugAsync(It.IsAny<string>()), Times.Once);
-		tagRepository.Verify(x => x.Add(It.IsAny<Tag>()), Times.Once);
+		tagRepository.Verify(x => x.Add(It.IsAny<DomainTag>()), Times.Once);
 		unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 	}
 
@@ -55,7 +56,7 @@ public class CreateTagCommandHandlerTests
 
 		tagRepository
 			.Setup(x => x.GetBySlugAsync(It.IsAny<string>()))
-			.ReturnsAsync(Tag.Create("Existing"));
+			.ReturnsAsync(DomainTag.Create("Existing"));
 
 		var handler = new CreateTagCommandHandler(tagRepository.Object, unitOfWork.Object, logger.Object);
 		var command = new CreateTagCommand("Existing");
@@ -67,7 +68,7 @@ public class CreateTagCommandHandlerTests
 		result.IsSuccess.Should().BeFalse();
 		result.Message.Should().Be("Tag with same slug already exists");
 		tagRepository.Verify(x => x.GetBySlugAsync(It.IsAny<string>()), Times.Once);
-		tagRepository.Verify(x => x.Add(It.IsAny<Tag>()), Times.Never);
+		tagRepository.Verify(x => x.Add(It.IsAny<DomainTag>()), Times.Never);
 		unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 	}
 
