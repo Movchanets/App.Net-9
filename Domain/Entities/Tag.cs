@@ -64,4 +64,14 @@ public class Tag : BaseEntity<Guid>
 		_productTags.Add(productTag);
 	}
 
+	internal void RemoveProductTag(ProductTag productTag)
+	{
+		if (productTag is null)
+		{
+			throw new ArgumentNullException(nameof(productTag));
+		}
+
+		_productTags.Remove(productTag);
+	}
+
 }

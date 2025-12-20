@@ -11,6 +11,12 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 		builder.ToTable("Categories");
 		builder.HasKey(c => c.Id);
 
+		builder.Metadata.FindNavigation(nameof(Category.Children))?
+			.SetPropertyAccessMode(PropertyAccessMode.Field);
+
+		builder.Metadata.FindNavigation(nameof(Category.ProductCategories))?
+			.SetPropertyAccessMode(PropertyAccessMode.Field);
+
 		builder.Property(c => c.Name)
 			.IsRequired()
 			.HasMaxLength(200);

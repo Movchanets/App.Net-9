@@ -35,6 +35,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Metadata.FindNavigation(nameof(Product.Gallery))?
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
+        builder.Metadata.FindNavigation(nameof(Product.ProductCategories))?
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasMany(p => p.ProductTags)
             .WithOne(pt => pt.Product)
             .HasForeignKey(pt => pt.ProductId)
@@ -48,6 +51,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasMany(p => p.Gallery)
             .WithOne(g => g.Product)
             .HasForeignKey(g => g.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.ProductCategories)
+            .WithOne(pc => pc.Product)
+            .HasForeignKey(pc => pc.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

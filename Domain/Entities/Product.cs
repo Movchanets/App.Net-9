@@ -75,12 +75,46 @@ public class Product : BaseEntity<Guid>
         _skus.Add(sku);
     }
 
+    public SkuEntity? RemoveSku(Guid skuId)
+    {
+        if (skuId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var existing = _skus.FirstOrDefault(s => s.Id == skuId);
+        if (existing is null)
+        {
+            return null;
+        }
+
+        _skus.Remove(existing);
+        return existing;
+    }
+
     public void AddGalleryItem(MediaImage mediaImage, int displayOrder = 0)
     {
         if (mediaImage is null) throw new ArgumentNullException(nameof(mediaImage));
 
         var galleryItem = ProductGallery.Create(this, mediaImage, displayOrder);
         _gallery.Add(galleryItem);
+    }
+
+    public ProductGallery? RemoveGalleryItem(Guid galleryItemId)
+    {
+        if (galleryItemId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var existing = _gallery.FirstOrDefault(g => g.Id == galleryItemId);
+        if (existing is null)
+        {
+            return null;
+        }
+
+        _gallery.Remove(existing);
+        return existing;
     }
 
     public void AddCategory(Category category)
@@ -105,6 +139,7 @@ public class Product : BaseEntity<Guid>
             return;
         }
 
+        existing.Category?.RemoveProductCategory(existing);
         _productCategories.Remove(existing);
     }
 
@@ -130,6 +165,7 @@ public class Product : BaseEntity<Guid>
             return;
         }
 
+        existing.Tag?.RemoveProductTag(existing);
         _productTags.Remove(existing);
     }
 }

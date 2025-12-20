@@ -92,4 +92,14 @@ public class Category : BaseEntity<Guid>
 		_productCategories.Add(productCategory);
 	}
 
+	internal void RemoveProductCategory(ProductCategory productCategory)
+	{
+		if (productCategory is null)
+		{
+			throw new ArgumentNullException(nameof(productCategory));
+		}
+
+		_productCategories.Remove(productCategory);
+	}
+
 }
