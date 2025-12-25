@@ -84,7 +84,7 @@ try
 
 
     // DbContext
-    if (!builder.Environment.IsEnvironment("Testing"))
+    if (!builder.Environment.IsDevelopment())
     {
         // Use PostgreSQL in non-testing environments
         builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -92,6 +92,7 @@ try
     }
     else
     {
+      
         builder.Services.AddDbContext<AppDbContext>(opt =>
           opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
     }
@@ -240,7 +241,7 @@ try
     {
         await app.SeedDataAsync();
     }
-
+   
     Log.Information("Application started successfully");
     app.Run();
 }

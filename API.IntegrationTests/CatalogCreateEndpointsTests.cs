@@ -131,6 +131,24 @@ public class CatalogCreateEndpointsTests : IClassFixture<TestWebApplicationFacto
 		return json.GetProperty("payload").GetGuid();
 	}
 
+	private async Task<(Guid ProductId, string SkuCode, Guid CategoryId)> GetSeededDemoProductAndCategory()
+	{
+		using var scope = _factory.Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+		var category = await db.Categories.FirstAsync(c => c.Slug == "electronics");
+		var product = await db.Products
+			.Include(p => p.Skus)
+			.Include(p => p.ProductCategories)
+			.FirstAsync(p => p.Name == "Phone Case (Demo)");
+
+		product.Skus.Should().NotBeEmpty("Seeder should create at least one SKU for demo products");
+		var skuCode = product.Skus.First().SkuCode;
+		skuCode.Should().NotBeNullOrWhiteSpace();
+
+		return (product.Id, skuCode, category.Id);
+	}
+
 	[Fact]
 	public async Task PostCategories_AsAdmin_CreatesCategory()
 	{
@@ -265,5 +283,131 @@ public class CatalogCreateEndpointsTests : IClassFixture<TestWebApplicationFacto
 		afterTagCount.Should().Be(initialTagCount);
 		afterSeededMediaCount.Should().Be(initialSeededMediaCount);
 		afterDemoProductsCount.Should().Be(initialDemoProductsCount);
+	}
+
+	[Fact]
+	public async Task GetCategories_Anonymous_ReturnsSeededCategories()
+	{
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync("/api/categories");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		var payload = json.GetProperty("payload");
+		payload.ValueKind.Should().Be(JsonValueKind.Array);
+
+		var slugs = payload.EnumerateArray().Select(e => e.GetProperty("slug").GetString()).ToList();
+		slugs.Should().Contain("electronics");
+	}
+
+	[Fact]
+	public async Task GetCategoryBySlug_Anonymous_ReturnsCategory()
+	{
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync("/api/categories/slug/electronics");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		json.GetProperty("payload").GetProperty("slug").GetString().Should().Be("electronics");
+	}
+
+	[Fact]
+	public async Task GetTags_Anonymous_ReturnsSeededTags()
+	{
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync("/api/tags");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		var payload = json.GetProperty("payload");
+		payload.ValueKind.Should().Be(JsonValueKind.Array);
+
+		var slugs = payload.EnumerateArray().Select(e => e.GetProperty("slug").GetString()).ToList();
+		slugs.Should().Contain("new");
+	}
+
+	[Fact]
+	public async Task GetTagBySlug_Anonymous_ReturnsTag()
+	{
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync("/api/tags/slug/new");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		json.GetProperty("payload").GetProperty("slug").GetString().Should().Be("new");
+	}
+
+	[Fact]
+	public async Task GetProducts_Anonymous_ReturnsSeededProducts()
+	{
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync("/api/products");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		var payload = json.GetProperty("payload");
+		payload.ValueKind.Should().Be(JsonValueKind.Array);
+
+		var names = payload.EnumerateArray().Select(e => e.GetProperty("name").GetString()).ToList();
+		names.Should().Contain("Phone Case (Demo)");
+	}
+
+	[Fact]
+	public async Task GetProductById_Anonymous_ReturnsDetailsWithSkusAndGallery()
+	{
+		var (productId, _, _) = await GetSeededDemoProductAndCategory();
+
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync($"/api/products/{productId}");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		var payload = json.GetProperty("payload");
+		payload.GetProperty("id").GetGuid().Should().Be(productId);
+
+		payload.GetProperty("skus").ValueKind.Should().Be(JsonValueKind.Array);
+		payload.GetProperty("skus").GetArrayLength().Should().BeGreaterThan(0);
+
+		payload.GetProperty("gallery").ValueKind.Should().Be(JsonValueKind.Array);
+		payload.GetProperty("gallery").GetArrayLength().Should().BeGreaterThan(0);
+
+		var firstGallery = payload.GetProperty("gallery").EnumerateArray().First();
+		firstGallery.GetProperty("storageKey").GetString().Should().NotBeNullOrWhiteSpace();
+		firstGallery.GetProperty("url").GetString().Should().NotBeNullOrWhiteSpace();
+	}
+
+	[Fact]
+	public async Task GetProductBySkuCode_Anonymous_ReturnsSameProductAsById()
+	{
+		var (productId, skuCode, _) = await GetSeededDemoProductAndCategory();
+
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync($"/api/products/by-sku/{skuCode}");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		json.GetProperty("payload").GetProperty("id").GetGuid().Should().Be(productId);
+	}
+
+	[Fact]
+	public async Task GetProductsByCategory_Anonymous_ReturnsProducts()
+	{
+		var (_, _, categoryId) = await GetSeededDemoProductAndCategory();
+
+		_client.DefaultRequestHeaders.Authorization = null;
+		var resp = await _client.GetAsync($"/api/products/by-category/{categoryId}");
+		resp.StatusCode.Should().Be(HttpStatusCode.OK);
+
+		var json = await resp.Content.ReadFromJsonAsync<JsonElement>();
+		json.GetProperty("isSuccess").GetBoolean().Should().BeTrue();
+		json.GetProperty("payload").ValueKind.Should().Be(JsonValueKind.Array);
+		json.GetProperty("payload").GetArrayLength().Should().BeGreaterThan(0);
 	}
 }
