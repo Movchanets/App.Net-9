@@ -10,6 +10,8 @@ import ResetPassword from './pages/reset/ResetPassword'
 import SettingsPage from './pages/Cabinet/SettingsPage'
 import Cabinet from './pages/Cabinet/Cabinet'
 import AdminPanel from './pages/admin/AdminPanel'
+import CategoriesManagement from './pages/admin/CategoriesManagement'
+import TagsManagement from './pages/admin/TagsManagement'
 import NotFound from './pages/NotFound'
 // no top-level Fragment needed here
 
@@ -43,15 +45,18 @@ export default function App() {
           <Route path="help" element={<div className="p-6">{t('menu.help')} ({t('common.empty')})</div>} />
         </Route>
 
-        {/* Admin route - redirects to 404 if not Admin */}
+        {/* Admin routes - require Admin role */}
         <Route 
           path="admin" 
           element={
             <ProtectedRoute requireAuth requiredRoles={['Admin']}>
               <AdminPanel />
             </ProtectedRoute>
-          } 
-        />
+          }
+        >
+          <Route path="categories" element={<CategoriesManagement />} />
+          <Route path="tags" element={<TagsManagement />} />
+        </Route>
 
         {/* 404 routes */}
         <Route path="404" element={<NotFound />} />
