@@ -1,4 +1,6 @@
 using Application.Commands.Tag.CreateTag;
+using Application.Commands.Tag.DeleteTag;
+using Application.Commands.Tag.UpdateTag;
 using Application.Queries.Catalog.GetTagById;
 using Application.Queries.Catalog.GetTagBySlug;
 using Application.Queries.Catalog.GetTags;
@@ -67,4 +69,31 @@ public sealed class TagsController : ControllerBase
 		if (!result.IsSuccess) return BadRequest(result);
 		return Ok(result);
 	}
+
+	/// <summary>
+	/// Оновити тег
+	/// </summary>
+	[HttpPut("{id:guid}")]
+	[Authorize(Policy = "Permission:tags.manage")]
+	public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateTagRequest request)
+	{
+		var command = new UpdateTagCommand(id, request.Name, request.Description);
+		var result = await _mediator.Send(command);
+		if (!result.IsSuccess) return BadRequest(result);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Видалити тег
+	/// </summary>
+	[HttpDelete("{id:guid}")]
+	[Authorize(Policy = "Permission:tags.manage")]
+	public async Task<IActionResult> Delete([FromRoute] Guid id)
+	{
+		var result = await _mediator.Send(new DeleteTagCommand(id));
+		if (!result.IsSuccess) return BadRequest(result);
+		return Ok(result);
+	}
 }
+
+public sealed record UpdateTagRequest(string Name, string? Description = null);

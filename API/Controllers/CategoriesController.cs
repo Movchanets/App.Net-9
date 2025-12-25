@@ -1,4 +1,6 @@
 using Application.Commands.Category.CreateCategory;
+using Application.Commands.Category.DeleteCategory;
+using Application.Commands.Category.UpdateCategory;
 using Application.Queries.Catalog.GetCategories;
 using Application.Queries.Catalog.GetCategoryById;
 using Application.Queries.Catalog.GetCategoryBySlug;
@@ -67,4 +69,31 @@ public sealed class CategoriesController : ControllerBase
 		if (!result.IsSuccess) return BadRequest(result);
 		return Ok(result);
 	}
+
+	/// <summary>
+	/// Оновити категорію
+	/// </summary>
+	[HttpPut("{id:guid}")]
+	[Authorize(Policy = "Permission:categories.manage")]
+	public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateCategoryRequest request)
+	{
+		var command = new UpdateCategoryCommand(id, request.Name, request.Description, request.ParentCategoryId);
+		var result = await _mediator.Send(command);
+		if (!result.IsSuccess) return BadRequest(result);
+		return Ok(result);
+	}
+
+	/// <summary>
+	/// Видалити категорію
+	/// </summary>
+	[HttpDelete("{id:guid}")]
+	[Authorize(Policy = "Permission:categories.manage")]
+	public async Task<IActionResult> Delete([FromRoute] Guid id)
+	{
+		var result = await _mediator.Send(new DeleteCategoryCommand(id));
+		if (!result.IsSuccess) return BadRequest(result);
+		return Ok(result);
+	}
 }
+
+public sealed record UpdateCategoryRequest(string Name, string? Description = null, Guid? ParentCategoryId = null);
