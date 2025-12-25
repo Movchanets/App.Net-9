@@ -49,6 +49,12 @@ public class Tag : BaseEntity<Guid>
 		MarkAsUpdated();
 	}
 
+	public void Update(string name, string? description)
+	{
+		Rename(name);
+		UpdateDescription(description);
+	}
+
 	internal void AddProductTag(ProductTag productTag)
 	{
 		if (productTag is null)

@@ -43,6 +43,18 @@ public class TagRepository : ITagRepository
 			.FirstOrDefaultAsync(t => t.Slug == normalized);
 	}
 
+	public async Task<Tag?> GetByNameAsync(string name)
+	{
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			return null;
+		}
+
+		var normalized = name.Trim();
+		return await _db.Tags
+			.FirstOrDefaultAsync(t => t.Name == normalized);
+	}
+
 	public void Add(Tag tag)
 	{
 		_db.Tags.Add(tag);
@@ -56,5 +68,16 @@ public class TagRepository : ITagRepository
 	public void Delete(Tag tag)
 	{
 		_db.Tags.Remove(tag);
+	}
+
+	public Task DeleteAsync(Tag tag)
+	{
+		_db.Tags.Remove(tag);
+		return Task.CompletedTask;
+	}
+
+	public async Task SaveChangesAsync()
+	{
+		await _db.SaveChangesAsync();
 	}
 }
