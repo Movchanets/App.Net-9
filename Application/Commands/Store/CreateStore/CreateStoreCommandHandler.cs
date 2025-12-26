@@ -38,17 +38,18 @@ public sealed class CreateStoreCommandHandler : IRequestHandler<CreateStoreComma
 				return new ServiceResponse<Guid>(false, "UserId is required");
 			}
 
-			var user = await _userRepository.GetByIdAsync(request.UserId);
-			if (user == null)
+			// UserId from JWT is IdentityUserId, need to lookup DomainUser
+			var domainUser = await _userRepository.GetByIdentityUserIdAsync(request.UserId);
+			if (domainUser == null)
 			{
-				_logger.LogWarning("User {UserId} not found", request.UserId);
+				_logger.LogWarning("Domain user not found for identity user {UserId}", request.UserId);
 				return new ServiceResponse<Guid>(false, "User not found");
 			}
 
-			var existingStore = await _storeRepository.GetByUserIdAsync(request.UserId);
+			var existingStore = await _storeRepository.GetByUserIdAsync(domainUser.Id);
 			if (existingStore != null)
 			{
-				_logger.LogWarning("User {UserId} already has a store {StoreId}", request.UserId, existingStore.Id);
+				_logger.LogWarning("User {UserId} already has a store {StoreId}", domainUser.Id, existingStore.Id);
 				return new ServiceResponse<Guid>(false, "User already has a store");
 			}
 
@@ -60,12 +61,12 @@ public sealed class CreateStoreCommandHandler : IRequestHandler<CreateStoreComma
 				return new ServiceResponse<Guid>(false, "Store with same slug already exists");
 			}
 
-			var store = StoreEntity.Create(request.UserId, request.Name, request.Description);
+			var store = StoreEntity.Create(domainUser.Id, request.Name, request.Description);
 
 			_storeRepository.Add(store);
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-			_logger.LogInformation("Store {StoreId} created for user {UserId}", store.Id, request.UserId);
+			_logger.LogInformation("Store {StoreId} created for user {UserId}", store.Id, domainUser.Id);
 			return new ServiceResponse<Guid>(true, "Store created successfully", store.Id);
 		}
 		catch (Exception ex)

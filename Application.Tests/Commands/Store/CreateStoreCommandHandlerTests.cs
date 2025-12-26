@@ -21,13 +21,17 @@ public class CreateStoreCommandHandlerTests
 	public async Task Handle_WhenValidRequest_CreatesStore()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!.SetValue(domainUser, domainUserId);
+
 		_userRepository
-			.Setup(x => x.GetByIdAsync(userId))
-			.ReturnsAsync(new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com"));
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
 
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
 			.ReturnsAsync((Domain.Entities.Store?)null);
 
 		_storeRepository
@@ -39,7 +43,7 @@ public class CreateStoreCommandHandlerTests
 			.ReturnsAsync(1);
 
 		var sut = CreateSut();
-		var cmd = new CreateStoreCommand(userId, "My Store", "desc");
+		var cmd = new CreateStoreCommand(identityUserId, "My Store", "desc");
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -56,13 +60,13 @@ public class CreateStoreCommandHandlerTests
 	public async Task Handle_WhenUserNotFound_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
+		var identityUserId = Guid.NewGuid();
 		_userRepository
-			.Setup(x => x.GetByIdAsync(userId))
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
 			.ReturnsAsync((Domain.Entities.User?)null);
 
 		var sut = CreateSut();
-		var cmd = new CreateStoreCommand(userId, "My Store", null);
+		var cmd = new CreateStoreCommand(identityUserId, "My Store", null);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -79,17 +83,21 @@ public class CreateStoreCommandHandlerTests
 	public async Task Handle_WhenUserAlreadyHasStore_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!.SetValue(domainUser, domainUserId);
+
 		_userRepository
-			.Setup(x => x.GetByIdAsync(userId))
-			.ReturnsAsync(new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com"));
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
 
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
-			.ReturnsAsync(Domain.Entities.Store.Create(userId, "Existing", null));
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
+			.ReturnsAsync(Domain.Entities.Store.Create(domainUserId, "Existing", null));
 
 		var sut = CreateSut();
-		var cmd = new CreateStoreCommand(userId, "My Store", null);
+		var cmd = new CreateStoreCommand(identityUserId, "My Store", null);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -106,13 +114,17 @@ public class CreateStoreCommandHandlerTests
 	public async Task Handle_WhenSlugAlreadyExists_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!.SetValue(domainUser, domainUserId);
+
 		_userRepository
-			.Setup(x => x.GetByIdAsync(userId))
-			.ReturnsAsync(new Domain.Entities.User(Guid.NewGuid(), email: "test@example.com"));
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
 
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
 			.ReturnsAsync((Domain.Entities.Store?)null);
 
 		_storeRepository
@@ -120,7 +132,7 @@ public class CreateStoreCommandHandlerTests
 			.ReturnsAsync(Domain.Entities.Store.Create(Guid.NewGuid(), "My Store", null));
 
 		var sut = CreateSut();
-		var cmd = new CreateStoreCommand(userId, "My Store", null);
+		var cmd = new CreateStoreCommand(identityUserId, "My Store", null);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);

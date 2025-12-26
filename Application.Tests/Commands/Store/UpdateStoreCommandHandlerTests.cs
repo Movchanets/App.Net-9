@@ -10,23 +10,55 @@ namespace Application.Tests.Commands.Store;
 public class UpdateStoreCommandHandlerTests
 {
 	private readonly Mock<IStoreRepository> _storeRepository = new();
+	private readonly Mock<IUserRepository> _userRepository = new();
 	private readonly Mock<IUnitOfWork> _unitOfWork = new();
 	private readonly Mock<ILogger<UpdateStoreCommandHandler>> _logger = new();
 
 	private UpdateStoreCommandHandler CreateSut()
-		=> new(_storeRepository.Object, _unitOfWork.Object, _logger.Object);
+		=> new(_storeRepository.Object, _userRepository.Object, _unitOfWork.Object, _logger.Object);
+
+	[Fact]
+	public async Task Handle_WhenUserNotFound_ReturnsFailure()
+	{
+		// Arrange
+		var identityUserId = Guid.NewGuid();
+		_userRepository
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync((Domain.Entities.User?)null);
+
+		var sut = CreateSut();
+		var cmd = new UpdateStoreCommand(identityUserId, "New Name", "desc");
+
+		// Act
+		var res = await sut.Handle(cmd, CancellationToken.None);
+
+		// Assert
+		res.IsSuccess.Should().BeFalse();
+		res.Message.Should().Be("User not found");
+		_storeRepository.Verify(x => x.Update(It.IsAny<Domain.Entities.Store>()), Times.Never);
+		_unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+	}
 
 	[Fact]
 	public async Task Handle_WhenStoreNotFound_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(identityUserId, "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!
+			.SetValue(domainUser, domainUserId);
+
+		_userRepository
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
+
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
 			.ReturnsAsync((Domain.Entities.Store?)null);
 
 		var sut = CreateSut();
-		var cmd = new UpdateStoreCommand(userId, "New Name", "desc");
+		var cmd = new UpdateStoreCommand(identityUserId, "New Name", "desc");
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -42,11 +74,20 @@ public class UpdateStoreCommandHandlerTests
 	public async Task Handle_WhenSlugAlreadyExists_ReturnsFailure()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		var store = Domain.Entities.Store.Create(userId, "Old", null);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(identityUserId, "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!
+			.SetValue(domainUser, domainUserId);
+
+		var store = Domain.Entities.Store.Create(domainUserId, "Old", null);
+
+		_userRepository
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
 
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
 			.ReturnsAsync(store);
 
 		_storeRepository
@@ -54,7 +95,7 @@ public class UpdateStoreCommandHandlerTests
 			.ReturnsAsync(Domain.Entities.Store.Create(Guid.NewGuid(), "New Name", null));
 
 		var sut = CreateSut();
-		var cmd = new UpdateStoreCommand(userId, "New Name", null);
+		var cmd = new UpdateStoreCommand(identityUserId, "New Name", null);
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);
@@ -70,11 +111,20 @@ public class UpdateStoreCommandHandlerTests
 	public async Task Handle_WhenValidRequest_UpdatesStore()
 	{
 		// Arrange
-		var userId = Guid.NewGuid();
-		var store = Domain.Entities.Store.Create(userId, "Old", null);
+		var identityUserId = Guid.NewGuid();
+		var domainUserId = Guid.NewGuid();
+		var domainUser = new Domain.Entities.User(identityUserId, "test@example.com");
+		typeof(Domain.Entities.User).GetProperty(nameof(Domain.Entities.User.Id))!
+			.SetValue(domainUser, domainUserId);
+
+		var store = Domain.Entities.Store.Create(domainUserId, "Old", null);
+
+		_userRepository
+			.Setup(x => x.GetByIdentityUserIdAsync(identityUserId))
+			.ReturnsAsync(domainUser);
 
 		_storeRepository
-			.Setup(x => x.GetByUserIdAsync(userId))
+			.Setup(x => x.GetByUserIdAsync(domainUserId))
 			.ReturnsAsync(store);
 
 		_storeRepository
@@ -86,7 +136,7 @@ public class UpdateStoreCommandHandlerTests
 			.ReturnsAsync(1);
 
 		var sut = CreateSut();
-		var cmd = new UpdateStoreCommand(userId, "New Name", "desc");
+		var cmd = new UpdateStoreCommand(identityUserId, "New Name", "desc");
 
 		// Act
 		var res = await sut.Handle(cmd, CancellationToken.None);

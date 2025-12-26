@@ -31,7 +31,8 @@ public class StoreCommandHandlerIntegrationTests : TestBase
 		var uow = new UnitOfWork(DbContext);
 		var handler = new CreateStoreCommandHandler(storeRepo, userRepo, uow, NullLogger<CreateStoreCommandHandler>.Instance);
 
-		var cmd = new CreateStoreCommand(user.Id, "My Store", "desc");
+		// Command uses IdentityUserId (from User entity) - same as JWT NameIdentifier claim
+		var cmd = new CreateStoreCommand(user.IdentityUserId, "My Store", "desc");
 
 		// Act
 		var res1 = await handler.Handle(cmd, CancellationToken.None);
@@ -80,10 +81,12 @@ public class StoreCommandHandlerIntegrationTests : TestBase
 		await DbContext.SaveChangesAsync();
 
 		var storeRepo = new StoreRepository(DbContext);
+		var userRepo = new UserRepository(DbContext);
 		var uow = new UnitOfWork(DbContext);
-		var handler = new UpdateStoreCommandHandler(storeRepo, uow, NullLogger<UpdateStoreCommandHandler>.Instance);
+		var handler = new UpdateStoreCommandHandler(storeRepo, userRepo, uow, NullLogger<UpdateStoreCommandHandler>.Instance);
 
-		var cmd = new UpdateStoreCommand(user.Id, "New Name", "new desc");
+		// Command uses IdentityUserId (from User entity)
+		var cmd = new UpdateStoreCommand(user.IdentityUserId, "New Name", "new desc");
 
 		// Act
 		var res = await handler.Handle(cmd, CancellationToken.None);

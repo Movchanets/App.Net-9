@@ -10,15 +10,18 @@ namespace Application.Commands.Store.UpdateStore;
 public sealed class UpdateStoreCommandHandler : IRequestHandler<UpdateStoreCommand, ServiceResponse>
 {
 	private readonly IStoreRepository _storeRepository;
+	private readonly IUserRepository _userRepository;
 	private readonly IUnitOfWork _unitOfWork;
 	private readonly ILogger<UpdateStoreCommandHandler> _logger;
 
 	public UpdateStoreCommandHandler(
 		IStoreRepository storeRepository,
+		IUserRepository userRepository,
 		IUnitOfWork unitOfWork,
 		ILogger<UpdateStoreCommandHandler> logger)
 	{
 		_storeRepository = storeRepository;
+		_userRepository = userRepository;
 		_unitOfWork = unitOfWork;
 		_logger = logger;
 	}
@@ -29,10 +32,18 @@ public sealed class UpdateStoreCommandHandler : IRequestHandler<UpdateStoreComma
 
 		try
 		{
-			var store = await _storeRepository.GetByUserIdAsync(request.UserId);
+			// UserId from JWT is IdentityUserId, need to lookup DomainUser
+			var domainUser = await _userRepository.GetByIdentityUserIdAsync(request.UserId);
+			if (domainUser == null)
+			{
+				_logger.LogWarning("Domain user not found for identity user {UserId}", request.UserId);
+				return new ServiceResponse(false, "User not found");
+			}
+
+			var store = await _storeRepository.GetByUserIdAsync(domainUser.Id);
 			if (store == null)
 			{
-				_logger.LogWarning("Store for user {UserId} not found", request.UserId);
+				_logger.LogWarning("Store for user {UserId} not found", domainUser.Id);
 				return new ServiceResponse(false, "Store not found");
 			}
 
