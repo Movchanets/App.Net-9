@@ -4,6 +4,11 @@ import { categoriesApi, type CategoryDto, type CreateCategoryRequest, type Updat
 
 const ITEMS_PER_PAGE = 10
 
+interface FormErrors {
+  name?: string
+  description?: string
+}
+
 export default function CategoriesManagement() {
   const { t } = useTranslation()
   const [categories, setCategories] = useState<CategoryDto[]>([])
@@ -12,6 +17,7 @@ export default function CategoriesManagement() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
 
   // Form state
   const [formData, setFormData] = useState<CreateCategoryRequest>({
@@ -60,10 +66,31 @@ export default function CategoriesManagement() {
     setFormData({ name: '', description: '', parentCategoryId: null })
     setEditingId(null)
     setShowCreateForm(false)
+    setFormErrors({})
+  }
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {}
+
+    if (!formData.name.trim()) {
+      errors.name = t('validation.required')
+    } else if (formData.name.trim().length < 2) {
+      errors.name = t('validation.min_2')
+    } else if (formData.name.length > 200) {
+      errors.name = t('validation.max_200')
+    }
+
+    if (formData.description && formData.description.length > 2000) {
+      errors.description = t('validation.max_2000')
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateForm()) return
     try {
       const response = await categoriesApi.create(formData)
       if (response.isSuccess) {
@@ -80,6 +107,7 @@ export default function CategoriesManagement() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingId) return
+    if (!validateForm()) return
     try {
       const updateData: UpdateCategoryRequest = {
         name: formData.name,
@@ -168,11 +196,19 @@ export default function CategoriesManagement() {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-600 bg-surface text-text 
-                  focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                required
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value })
+                  if (formErrors.name) setFormErrors({ ...formErrors, name: undefined })
+                }}
+                className={`w-full px-3 py-2 rounded-lg border bg-surface text-text 
+                  focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent
+                  ${formErrors.name ? 'border-red-500' : 'border-gray-600'}`}
+                maxLength={200}
               />
+              {formErrors.name && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+              )}
+              <p className="mt-1 text-xs text-text-muted">{formData.name.length}/200</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">
@@ -180,11 +216,20 @@ export default function CategoriesManagement() {
               </label>
               <textarea
                 value={formData.description || ''}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value || null })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-600 bg-surface text-text 
-                  focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y"
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value || null })
+                  if (formErrors.description) setFormErrors({ ...formErrors, description: undefined })
+                }}
+                className={`w-full px-3 py-2 rounded-lg border bg-surface text-text 
+                  focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-y
+                  ${formErrors.description ? 'border-red-500' : 'border-gray-600'}`}
                 rows={3}
+                maxLength={2000}
               />
+              {formErrors.description && (
+                <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
+              )}
+              <p className="mt-1 text-xs text-text-muted">{(formData.description || '').length}/2000</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">
