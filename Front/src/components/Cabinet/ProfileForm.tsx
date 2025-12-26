@@ -167,6 +167,17 @@ export default function ProfileForm() {
       // Refresh profile to get new avatar URL
       await fetchProfile()
       
+      // Refresh auth token to update avatarUrl in header
+      try {
+        const { authApi } = await import('../../api/authApi')
+        const { useAuthStore } = await import('../../store/authStore')
+        const tokens = await authApi.refreshTokens()
+        const setAuth = useAuthStore.getState().setAuth
+        if (setAuth) setAuth(tokens.accessToken || '', tokens.refreshToken || '')
+      } catch {
+        // token refresh optional; ignore
+      }
+      
       setSuccess(t('profile.picture_updated'))
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
@@ -191,6 +202,17 @@ export default function ProfileForm() {
     try {
       await userApi.deleteProfilePicture()
       await fetchProfile()
+      
+      // Refresh auth token to update avatarUrl in header
+      try {
+        const { authApi } = await import('../../api/authApi')
+        const { useAuthStore } = await import('../../store/authStore')
+        const tokens = await authApi.refreshTokens()
+        const setAuth = useAuthStore.getState().setAuth
+        if (setAuth) setAuth(tokens.accessToken || '', tokens.refreshToken || '')
+      } catch {
+        // token refresh optional; ignore
+      }
       
       setSuccess(t('profile.picture_deleted'))
       setTimeout(() => setSuccess(null), 3000)
