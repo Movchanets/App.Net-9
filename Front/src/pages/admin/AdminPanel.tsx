@@ -13,6 +13,7 @@ export default function AdminPanel() {
     { path: '/admin', label: t('admin.nav.dashboard'), exact: true },
     { path: '/admin/categories', label: t('admin.nav.categories') },
     { path: '/admin/tags', label: t('admin.nav.tags') },
+    { path: '/admin/stores', label: t('admin.nav.stores') },
   ]
 
   return (
@@ -58,6 +59,10 @@ export default function AdminPanel() {
             <Link to="/admin/tags" className="card p-6 hover:shadow-md transition-shadow">
               <h3 className="text-lg font-semibold text-text mb-2">{t('admin.cards.tags')}</h3>
               <p className="text-text-muted text-sm">{t('admin.cards.tags_desc')}</p>
+            </Link>
+            <Link to="/admin/stores" className="card p-6 hover:shadow-md transition-shadow">
+              <h3 className="text-lg font-semibold text-text mb-2">{t('admin.cards.stores')}</h3>
+              <p className="text-text-muted text-sm">{t('admin.cards.stores_desc')}</p>
             </Link>
             <div className="card p-6">
               <h3 className="text-lg font-semibold text-text mb-2">{t('admin.cards.orders')}</h3>
