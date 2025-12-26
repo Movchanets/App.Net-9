@@ -1,11 +1,15 @@
 using FluentValidation;
 
-namespace Application.Commands.Tag.CreateTag;
+namespace Application.Commands.Tag.UpdateTag;
 
-public sealed class CreateTagCommandValidator : AbstractValidator<CreateTagCommand>
+public sealed class UpdateTagCommandValidator : AbstractValidator<UpdateTagCommand>
 {
-	public CreateTagCommandValidator()
+	public UpdateTagCommandValidator()
 	{
+		RuleFor(x => x.Id)
+			.NotEmpty()
+			.WithMessage("Id is required");
+
 		RuleFor(x => x.Name)
 			.NotEmpty()
 			.WithMessage("Name is required")
