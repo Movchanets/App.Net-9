@@ -201,7 +201,7 @@ public abstract class TestBase : IAsyncLifetime
                     await _sharedContainerStartTask;
                     return _sharedContainer;
                 }
-                catch (DotNet.Testcontainers.Builders.DockerUnavailableException) when (attempt < maxAttempts)
+                catch (Exception ex) when (ex.GetType().Name == "DockerUnavailableException" && attempt < maxAttempts)
                 {
                     await Task.Delay(delay);
                 }

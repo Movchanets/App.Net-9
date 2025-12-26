@@ -46,6 +46,10 @@ export default function Cabinet() {
                   <span>👛</span>
                   {t('menu.wallet')}
                 </NavLink>
+                <NavLink to="/cabinet/my-store" className={linkClass}>
+                  <span>🏪</span>
+                  {t('menu.myStore')}
+                </NavLink>
                 <NavLink to="/cabinet/user/settings?tab=profile" className={linkClass}>
                   <span>⚙️</span>
                   {t('menu.settings')}
@@ -61,7 +65,7 @@ export default function Cabinet() {
               </nav>
 
               <div className="mt-4">
-                <LanguageSelector align="left" />
+                <LanguageSelector align="left" dropUp />
               </div>
 
               <div className="mt-4">

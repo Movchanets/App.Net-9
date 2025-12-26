@@ -49,6 +49,12 @@ public class Tag : BaseEntity<Guid>
 		MarkAsUpdated();
 	}
 
+	public void Update(string name, string? description)
+	{
+		Rename(name);
+		UpdateDescription(description);
+	}
+
 	internal void AddProductTag(ProductTag productTag)
 	{
 		if (productTag is null)
@@ -62,6 +68,16 @@ public class Tag : BaseEntity<Guid>
 		}
 
 		_productTags.Add(productTag);
+	}
+
+	internal void RemoveProductTag(ProductTag productTag)
+	{
+		if (productTag is null)
+		{
+			throw new ArgumentNullException(nameof(productTag));
+		}
+
+		_productTags.Remove(productTag);
 	}
 
 }

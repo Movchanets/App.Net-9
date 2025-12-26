@@ -131,6 +131,13 @@ export function SidenavMenu({ isOpen, onClose, user }: SidenavMenuProps) {
             <span>❓</span>
             {t('menu.help')}
           </NavLink>
+
+          {user?.roles?.includes('Admin') && (
+            <NavLink to="/admin" className={linkClass} onClick={onClose}>
+              <span>🛡️</span>
+              {t('menu.admin')}
+            </NavLink>
+          )}
         </nav>
 
         <div className="mt-4">

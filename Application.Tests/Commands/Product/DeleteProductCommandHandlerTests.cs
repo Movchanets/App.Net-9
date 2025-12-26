@@ -1,0 +1,64 @@
+using Application.Commands.Product.DeleteProduct;
+using Application.Interfaces;
+using Domain.Interfaces.Repositories;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace Application.Tests.Commands.Product;
+
+public class DeleteProductCommandHandlerTests
+{
+	private readonly Mock<IProductRepository> _productRepository = new();
+	private readonly Mock<IStoreRepository> _storeRepository = new();
+	private readonly Mock<IUnitOfWork> _unitOfWork = new();
+	private readonly Mock<ILogger<DeleteProductCommandHandler>> _logger = new();
+
+	private DeleteProductCommandHandler CreateSut()
+		=> new(_productRepository.Object, _storeRepository.Object, _unitOfWork.Object, _logger.Object);
+
+	[Fact]
+	public async Task Handle_WhenStoreNotFound_ReturnsFailure()
+	{
+		// Arrange
+		var userId = Guid.NewGuid();
+		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync((Domain.Entities.Store?)null);
+
+		var sut = CreateSut();
+		var cmd = new DeleteProductCommand(userId, Guid.NewGuid());
+
+		// Act
+		var res = await sut.Handle(cmd, CancellationToken.None);
+
+		// Assert
+		res.IsSuccess.Should().BeFalse();
+		res.Message.Should().Be("Store not found");
+		_productRepository.Verify(x => x.Delete(It.IsAny<Domain.Entities.Product>()), Times.Never);
+	}
+
+	[Fact]
+	public async Task Handle_WhenValidRequest_DeletesProduct()
+	{
+		// Arrange
+		var userId = Guid.NewGuid();
+		var store = Domain.Entities.Store.Create(userId, "My Store", null);
+		var product = new Domain.Entities.Product("Old");
+		store.AddProduct(product);
+
+		_storeRepository.Setup(x => x.GetByUserIdAsync(userId)).ReturnsAsync(store);
+		_productRepository.Setup(x => x.GetByIdAsync(product.Id)).ReturnsAsync(product);
+		_unitOfWork.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+		var sut = CreateSut();
+		var cmd = new DeleteProductCommand(userId, product.Id);
+
+		// Act
+		var res = await sut.Handle(cmd, CancellationToken.None);
+
+		// Assert
+		res.IsSuccess.Should().BeTrue();
+		res.Message.Should().Be("Product deleted successfully");
+		_productRepository.Verify(x => x.Delete(product), Times.Once);
+		_unitOfWork.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+	}
+}

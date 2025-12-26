@@ -48,6 +48,12 @@ public class Category : BaseEntity<Guid>
 		MarkAsUpdated();
 	}
 
+	public void UpdateDescription(string? description)
+	{
+		Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+		MarkAsUpdated();
+	}
+
 	public void SetParent(Category? parent)
 	{
 		if (parent != null && parent.Id == Id)
@@ -84,6 +90,16 @@ public class Category : BaseEntity<Guid>
 		}
 
 		_productCategories.Add(productCategory);
+	}
+
+	internal void RemoveProductCategory(ProductCategory productCategory)
+	{
+		if (productCategory is null)
+		{
+			throw new ArgumentNullException(nameof(productCategory));
+		}
+
+		_productCategories.Remove(productCategory);
 	}
 
 }

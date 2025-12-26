@@ -10,6 +10,11 @@ import ResetPassword from './pages/reset/ResetPassword'
 import SettingsPage from './pages/Cabinet/SettingsPage'
 import Cabinet from './pages/Cabinet/Cabinet'
 import AdminPanel from './pages/admin/AdminPanel'
+import CategoriesManagement from './pages/admin/CategoriesManagement'
+import TagsManagement from './pages/admin/TagsManagement'
+import StoresManagement from './pages/admin/StoresManagement'
+import MyStore from './pages/store/MyStore'
+import CreateStore from './pages/store/CreateStore'
 import NotFound from './pages/NotFound'
 // no top-level Fragment needed here
 
@@ -35,6 +40,8 @@ export default function App() {
         >
           <Route index element={<div className="p-6">{t('greeting', { name: '' })}</div>} />
           <Route path="user/settings" element={<SettingsPage />} />
+          <Route path="my-store" element={<MyStore />} />
+          <Route path="create-store" element={<CreateStore />} />
           <Route path="orders" element={<div className="p-6">{t('menu.orders')} ({t('common.empty')})</div>} />
           <Route path="tracking" element={<div className="p-6">{t('menu.tracking')} ({t('common.empty')})</div>} />
           <Route path="favorites" element={<div className="p-6">{t('menu.favorites')} ({t('common.empty')})</div>} />
@@ -43,15 +50,19 @@ export default function App() {
           <Route path="help" element={<div className="p-6">{t('menu.help')} ({t('common.empty')})</div>} />
         </Route>
 
-        {/* Admin route - redirects to 404 if not Admin */}
+        {/* Admin routes - require Admin role */}
         <Route 
           path="admin" 
           element={
             <ProtectedRoute requireAuth requiredRoles={['Admin']}>
               <AdminPanel />
             </ProtectedRoute>
-          } 
-        />
+          }
+        >
+          <Route path="categories" element={<CategoriesManagement />} />
+          <Route path="tags" element={<TagsManagement />} />
+          <Route path="stores" element={<StoresManagement />} />
+        </Route>
 
         {/* 404 routes */}
         <Route path="404" element={<NotFound />} />

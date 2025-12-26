@@ -11,6 +11,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
         builder.HasKey(p => p.Id);
 
+        builder.HasOne(p => p.Store)
+            .WithMany(s => s.Products)
+            .HasForeignKey(p => p.StoreId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(200);
@@ -30,6 +35,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Metadata.FindNavigation(nameof(Product.Gallery))?
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
+        builder.Metadata.FindNavigation(nameof(Product.ProductCategories))?
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasMany(p => p.ProductTags)
             .WithOne(pt => pt.Product)
             .HasForeignKey(pt => pt.ProductId)
@@ -43,6 +51,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasMany(p => p.Gallery)
             .WithOne(g => g.Product)
             .HasForeignKey(g => g.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(p => p.ProductCategories)
+            .WithOne(pc => pc.Product)
+            .HasForeignKey(pc => pc.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -84,7 +84,7 @@ try
 
 
     // DbContext
-    if (!builder.Environment.IsEnvironment("Testing"))
+    if (!builder.Environment.IsDevelopment())
     {
         // Use PostgreSQL in non-testing environments
         builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -92,6 +92,7 @@ try
     }
     else
     {
+      
         builder.Services.AddDbContext<AppDbContext>(opt =>
           opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
     }
@@ -106,6 +107,11 @@ try
     // Repositories
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IMediaImageRepository, MediaImageRepository>();
+    builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+    builder.Services.AddScoped<IStoreRepository, StoreRepository>();
+    builder.Services.AddScoped<IProductRepository, ProductRepository>();
+    builder.Services.AddScoped<ISkuRepository, SkuRepository>();
+    builder.Services.AddScoped<ITagRepository, TagRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
     builder.Services.AddIdentity<ApplicationUser, RoleEntity>(options =>
@@ -235,7 +241,7 @@ try
     {
         await app.SeedDataAsync();
     }
-
+   
     Log.Information("Application started successfully");
     app.Run();
 }
