@@ -12,10 +12,12 @@
     "tracking": "Tracking",
     "favorites": "Favorites",
     "wallet": "Wallet",
+    "myStore": "My Store",
     "settings": "Settings",
     "security": "Login & password",
     "support": "Support",
-    "help": "Help"
+    "help": "Help",
+    "admin": "Admin panel"
   },
 
   "nav": {
@@ -110,6 +112,8 @@
     "email": "Invalid email format",
     "min_6": "Minimum 6 characters",
     "min_2": "Minimum 2 characters",
+    "max_200": "Maximum 200 characters",
+    "max_2000": "Maximum 2000 characters",
     "passwords_must_match": "Passwords do not match",
     "passwords_mismatch": "Passwords do not match",
     "server_error": "Failed to connect to server",
@@ -225,13 +229,16 @@
     "nav": {
       "dashboard": "Dashboard",
       "categories": "Categories",
-      "tags": "Tags"
+      "tags": "Tags",
+      "stores": "Stores"
     },
     "cards": {
       "categories": "Categories",
       "categories_desc": "Manage product categories",
       "tags": "Tags",
       "tags_desc": "Manage product tags",
+      "stores": "Stores",
+      "stores_desc": "Manage seller stores",
       "orders": "Orders",
       "orders_desc": "View all orders"
     },
@@ -259,6 +266,66 @@
       "of": "of",
       "prev": "Previous",
       "next": "Next"
+    },
+    "stores": {
+      "title": "Store Management",
+      "name": "Name",
+      "slug": "Slug",
+      "owner": "Owner",
+      "status": "Status",
+      "products": "Products",
+      "created": "Created",
+      "actions": "Actions",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "suspended": "Suspended",
+      "active": "Active",
+      "verify": "Verify",
+      "suspend": "Suspend",
+      "unsuspend": "Unsuspend",
+      "confirm_suspend": "Are you sure you want to suspend this store?",
+      "no_stores": "No stores yet",
+      "showing": "Showing",
+      "of": "of",
+      "prev": "Previous",
+      "next": "Next"
     }
+  },
+
+  "store": {
+    "my_store": "My Store",
+    "create": {
+      "title": "Create Store",
+      "description": "Create your own store to start selling products",
+      "name": "Store Name",
+      "name_placeholder": "Enter store name",
+      "store_description": "Store Description",
+      "description_placeholder": "Describe your store",
+      "button": "Create Store",
+      "creating": "Creating..."
+    },
+    "loading": "Loading...",
+    "stats": {
+      "products": "Products",
+      "orders": "Orders",
+      "created": "Created"
+    },
+    "status": {
+      "verified": "Verified",
+      "unverified": "Awaiting verification",
+      "suspended": "Suspended"
+    },
+    "notices": {
+      "unverified": "Your store is awaiting verification. Once verified, your products will be visible to buyers.",
+      "suspended": "Your store has been suspended. Contact support for more information."
+    },
+    "description": "Description",
+    "verification_pending_title": "Verification Pending",
+    "verification_pending_message": "Your store is awaiting verification. Once verified, your products will be visible to buyers.",
+    "suspended_title": "Store Suspended",
+    "suspended_message": "Your store has been suspended. Contact support for more information.",
+    "quick_actions": "Quick Actions",
+    "add_product": "Add Product",
+    "edit_store": "Edit Store"
   }
 }
